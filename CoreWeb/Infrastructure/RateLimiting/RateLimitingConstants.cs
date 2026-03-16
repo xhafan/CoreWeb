@@ -1,4 +1,4 @@
-﻿namespace MrWatchdog.Web.Infrastructure.RateLimiting;
+﻿namespace CoreWeb.Infrastructure.RateLimiting;
 
 public class RateLimitingConstants
 {

@@ -1,12 +1,12 @@
 ﻿using System.Collections.ObjectModel;
+using System.Xml.Linq;
+using CoreBackend.Infrastructure.DataProtections;
 using CoreDdd.Nhibernate.Configurations;
 using CoreDdd.Nhibernate.Repositories;
 using CoreDdd.Nhibernate.UnitOfWorks;
 using Microsoft.AspNetCore.DataProtection.Repositories;
-using System.Xml.Linq;
-using MrWatchdog.Core.Infrastructure.DataProtections;
 
-namespace MrWatchdog.Web.Infrastructure;
+namespace CoreWeb.Infrastructure;
 
 public class DataProtectionKeyXmlRepository(INhibernateConfigurator nhibernateConfigurator) : IXmlRepository
 {

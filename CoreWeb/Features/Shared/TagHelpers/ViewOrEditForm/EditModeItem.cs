@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace MrWatchdog.Web.Features.Shared.TagHelpers.ViewOrEditForm;
+namespace CoreWeb.Features.Shared.TagHelpers.ViewOrEditForm;
 
 [HtmlTargetElement("edit-mode-item")]
 public class EditModeItem : TagHelper

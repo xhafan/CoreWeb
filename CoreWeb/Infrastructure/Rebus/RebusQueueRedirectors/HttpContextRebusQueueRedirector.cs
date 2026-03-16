@@ -1,8 +1,10 @@
-﻿using CoreUtils;
-using MrWatchdog.Core.Infrastructure.Rebus;
-using MrWatchdog.Core.Infrastructure.Rebus.RebusQueueRedirectors;
+﻿using CoreBackend.Infrastructure.Rebus;
+using CoreBackend.Infrastructure.Rebus.RebusQueueRedirectors;
+using CoreUtils;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.Rebus.RebusQueueRedirectors;
+namespace CoreWeb.Infrastructure.Rebus.RebusQueueRedirectors;
 
 public class HttpContextRebusQueueRedirector(
     IHttpContextAccessor httpContextAccessor,

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace MrWatchdog.Web.Infrastructure;
+namespace CoreWeb.Infrastructure;
 
 // inspired by https://www.learnrazorpages.com/advanced/custom-route-conventions#creating-a-new-convention
 public class PageRouteModelConvention : IPageRouteModelConvention

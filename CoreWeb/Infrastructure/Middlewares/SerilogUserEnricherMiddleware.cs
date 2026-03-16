@@ -1,8 +1,9 @@
-﻿using MrWatchdog.Core.Infrastructure;
-using System.Security.Claims;
-using MrWatchdog.Web.Infrastructure.Authorizations;
+﻿using System.Security.Claims;
+using CoreBackend.Infrastructure;
+using CoreWeb.Infrastructure.Authorizations;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.Middlewares;
+namespace CoreWeb.Infrastructure.Middlewares;
 
 public class SerilogUserEnricherMiddleware(RequestDelegate next)
 {

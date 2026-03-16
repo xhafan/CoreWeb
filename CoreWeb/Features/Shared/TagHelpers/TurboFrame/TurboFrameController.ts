@@ -1,10 +1,10 @@
 import { Controller } from "@hotwired/stimulus";
 import { FrameElement } from "@hotwired/turbo";
 import { formEditingCancelledEventName, formSubmitJobCompletedEventName } from "../ViewOrEditForm/ViewOrEditFormController";
-import { EventHandlerRegistration, registerGlobalEventHandlerEventName } from "../../BodyController";
+import { EventHandlerRegistration, registerGlobalEventHandlerEventName } from "../../EventHandlerRegistration";
 
 export default class TurboFrameController extends Controller {
-    
+
     static values = {
         reloadOnEvent: String
     }

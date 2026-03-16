@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace MrWatchdog.Web.Features.Shared.TagHelpers.ViewOrEditForm;
+namespace CoreWeb.Features.Shared.TagHelpers.ViewOrEditForm;
 
 [HtmlTargetElement("view-or-edit-form")]
 public class ViewOrEditForm(IHtmlHelper htmlHelper) 
@@ -10,10 +10,10 @@ public class ViewOrEditForm(IHtmlHelper htmlHelper)
     public string? Action { get; set; }
     public bool StartInEditMode { get; set; }
     public bool HideCancelInEditMode { get; set; }
-    
+
     protected override string GetStimulusControllerName()
     {
-        return StimulusControllers.ViewOrEditForm;
+        return CoreWebStimulusControllers.ViewOrEditForm;
     }
 
     protected override Task<ViewOrEditFormStimulusModel> GetStimulusModel()

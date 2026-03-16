@@ -1,4 +1,4 @@
-﻿namespace MrWatchdog.Web.Features.Shared;
+﻿namespace CoreWeb.Features.Shared;
 
 public static class ViewDataConstants
 {

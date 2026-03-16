@@ -1,6 +1,6 @@
 ﻿using Reinforced.Typings.Attributes;
 
-namespace MrWatchdog.Web.Features.Logs;
+namespace CoreWeb.Features.Logs;
 
 [TsClass(IncludeNamespace = false, AutoExportMethods = false)]
 public static class LogsUrlConstants

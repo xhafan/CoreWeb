@@ -1,6 +1,7 @@
-﻿using MrWatchdog.Web.Infrastructure.Authorizations;
+﻿using CoreWeb.Infrastructure.Authorizations;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.RateLimiting;
+namespace CoreWeb.Infrastructure.RateLimiting;
 
 public static class HttpContextUserIdOrClientIpAddressGetter
 {

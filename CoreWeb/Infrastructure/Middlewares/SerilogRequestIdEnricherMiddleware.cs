@@ -1,6 +1,7 @@
-﻿using MrWatchdog.Core.Infrastructure;
+﻿using CoreBackend.Infrastructure;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.Middlewares;
+namespace CoreWeb.Infrastructure.Middlewares;
 
 public class SerilogRequestIdEnricherMiddleware(RequestDelegate next)
 {

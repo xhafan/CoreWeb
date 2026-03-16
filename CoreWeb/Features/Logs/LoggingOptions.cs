@@ -1,4 +1,4 @@
-﻿namespace MrWatchdog.Web.Features.Logs;
+﻿namespace CoreWeb.Features.Logs;
 
 public class LoggingOptions
 {

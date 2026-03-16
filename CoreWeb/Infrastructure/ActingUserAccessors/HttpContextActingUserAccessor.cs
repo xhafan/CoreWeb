@@ -1,7 +1,8 @@
-﻿using MrWatchdog.Core.Infrastructure.ActingUserAccessors;
-using MrWatchdog.Web.Infrastructure.Authorizations;
+﻿using CoreBackend.Infrastructure.ActingUserAccessors;
+using CoreWeb.Infrastructure.Authorizations;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.ActingUserAccessors;
+namespace CoreWeb.Infrastructure.ActingUserAccessors;
 
 public class HttpContextActingUserAccessor(IHttpContextAccessor httpContextAccessor) : IActingUserAccessor
 {

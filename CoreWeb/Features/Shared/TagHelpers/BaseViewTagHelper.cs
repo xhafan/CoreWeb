@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
-namespace MrWatchdog.Web.Features.Shared.TagHelpers;
+namespace CoreWeb.Features.Shared.TagHelpers;
 
 public abstract class BaseViewTagHelper(IHtmlHelper htmlHelper) : TagHelper 
 {

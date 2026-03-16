@@ -2,14 +2,8 @@
 //     Changes to this file may cause incorrect behavior and will be lost if
 //     the code is regenerated.
 
-export interface SharedTranslations
+export abstract class CoreWebStimulusControllers
 {
-	ok: string;
-	cancel: string;
-	back: string;
-	next: string;
-	finish: string;
-	error: string;
-	edit: string;
-	save: string;
+	public static turboFrame: string = `turbo-frame`;
+	public static viewOrEditForm: string = `view-or-edit-form`;
 }

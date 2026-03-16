@@ -1,7 +1,7 @@
-﻿@using MrWatchdog.Core.Resources
-@using MrWatchdog.Web.Features.Shared
-@model ViewOrEditForm
-
+﻿@using CoreBackend.Resources
+@using CoreWeb.Features.Shared
+@model CoreWeb.Features.Shared.TagHelpers.ViewOrEditForm.ViewOrEditForm
+@inject ISharedTranslationsGetter SharedTranslationsGetter
 <form method="post"
       action="@Model.Action"
       data-view-or-edit-form-target="form"
@@ -11,28 +11,32 @@
     
     <div class="row">
         <div class="col text-end d-flex justify-content-end gap-2">
+            
+            @{
+                var sharedTranslations = SharedTranslationsGetter.GetSharedTranslations();
+            }
 
             <button type="button"
                     data-view-or-edit-form-target="edit"
-                    data-action="@StimulusControllers.ViewOrEditForm#edit"
+                    data-action="@CoreWebStimulusControllers.ViewOrEditForm#edit"
                     class="btn btn-outline-primary"
                     >
-                @Resource.Edit
+                @sharedTranslations.Edit
             </button>
             <button type="button"
                     data-view-or-edit-form-target="cancel"
-                    data-action="@StimulusControllers.ViewOrEditForm#cancel"
+                    data-action="@CoreWebStimulusControllers.ViewOrEditForm#cancel"
                     class="btn btn-outline-primary"
                     style="display: none"
                     >
-                @Resource.Cancel
+                @sharedTranslations.Cancel
             </button>
             <button type="submit"
                     data-view-or-edit-form-target="save"
                     class="btn btn-primary"
                     style="display: none"
                     >
-                @Resource.Save
+                @sharedTranslations.Save
             </button>
         </div>
     </div>

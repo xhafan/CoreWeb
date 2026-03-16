@@ -1,6 +1,7 @@
 ﻿using System.Net;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.Middlewares;
+namespace CoreWeb.Infrastructure.Middlewares;
 
 // During deployment, a page can be loaded from an old app version, and assets from a new version.
 // This middleware handles requests for old fingerprinted assets (e.g. /assets/bundle.abc123.js)

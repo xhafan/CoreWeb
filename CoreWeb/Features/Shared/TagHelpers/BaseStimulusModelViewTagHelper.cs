@@ -1,9 +1,9 @@
-﻿using CoreUtils;
+﻿using CoreBackend.Infrastructure.Jsons;
+using CoreUtils;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using MrWatchdog.Core.Infrastructure.Jsons;
 
-namespace MrWatchdog.Web.Features.Shared.TagHelpers;
+namespace CoreWeb.Features.Shared.TagHelpers;
 
 public abstract class BaseStimulusModelViewTagHelper<TStimulusModel>(IHtmlHelper htmlHelper) 
     : BaseViewTagHelper(htmlHelper)

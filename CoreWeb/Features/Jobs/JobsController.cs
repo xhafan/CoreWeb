@@ -1,23 +1,23 @@
-﻿using CoreDdd.Queries;
+﻿using CoreBackend.Features.Jobs.Queries;
+using CoreBackend.Infrastructure.Repositories;
+using CoreDdd.Queries;
 using CoreUtils;
 using CoreUtils.Extensions;
+using CoreWeb.Infrastructure.Authorizations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MrWatchdog.Core.Features.Jobs.Queries;
-using MrWatchdog.Core.Infrastructure.Repositories;
-using MrWatchdog.Core.Messages;
-using MrWatchdog.Web.Infrastructure.Authorizations;
 using Newtonsoft.Json;
 using Rebus.Bus;
 using Rebus.Messages;
 
-namespace MrWatchdog.Web.Features.Jobs;
+namespace CoreWeb.Features.Jobs;
 
 [ApiController]
 [Route("api/[controller]")]
 public class JobsController(
     IQueryExecutor queryExecutor,
-    IJobRepository jobRepository
+    IJobRepository jobRepository,
+    IMessageTypeGetter messageTypeGetter
 ) : ControllerBase
 {
     [HttpGet("{jobGuid}")]
@@ -44,7 +44,7 @@ public class JobsController(
             : Ok(jobDtos.Single());
     }
 
-    [Authorize(Policy = Policies.SuperAdmin)]
+    [Authorize(Policy = CoreWebPolicies.SuperAdmin)]
     [HttpPost("[action]")]
     public async Task HandleFailedJobAgain(
         Guid jobGuid, 
@@ -55,24 +55,12 @@ public class JobsController(
         var job = await jobRepository.LoadByGuidAsync(jobGuid);
         Guard.Hope(ignoreCompletedJob || job.CompletedOn == null, $"Job {jobGuid} has been already completed.");
         
-        var messageType = _GetMessageTypes(job.Type);
+        var messageType = messageTypeGetter.GetMessageType(job.Type);
         Guard.Hope(messageType != null, $"Could not find type {job.Type}.");
 
         var message = JsonConvert.DeserializeObject(job.InputData, type: messageType, settings: null);
         Guard.Hope(message != null, "Could not deserialize the message.");
 
         await rebusBus.Send(message, new Dictionary<string, string> {{Headers.MessageId, jobGuid.ToString()}});
-    }
-
-    private Type _GetMessageTypes(string messageTypeName)
-    {
-        var messageType = typeof(BaseMessage).Assembly.GetTypes()
-            .SingleOrDefault(x => typeof(BaseMessage).IsAssignableFrom(x)
-                                  && !x.IsAbstract
-                                  && x.IsPublic
-                                  && x.Name == messageTypeName);
-
-        Guard.Hope(messageType != null, $"There is not a message of type {messageTypeName}");
-        return messageType;
     }
 }

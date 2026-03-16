@@ -1,14 +1,15 @@
-﻿using CoreUtils;
+﻿using CoreBackend.Infrastructure;
+using CoreBackend.Infrastructure.EmailSenders;
+using CoreBackend.Infrastructure.Rebus;
+using CoreUtils;
+using CoreWeb.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MrWatchdog.Core.Infrastructure;
-using MrWatchdog.Core.Infrastructure.EmailSenders;
-using MrWatchdog.Core.Infrastructure.Rebus;
-using MrWatchdog.Web.Infrastructure.RateLimiting;
 
-namespace MrWatchdog.Web.Features.Logs;
+namespace CoreWeb.Features.Logs;
 
 [ApiController]
 [EnableRateLimiting(RateLimitingConstants.LogErrorsRequestsPerSecondPerUserPolicy)]

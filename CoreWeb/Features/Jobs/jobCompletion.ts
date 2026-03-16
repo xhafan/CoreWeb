@@ -1,10 +1,8 @@
 import Enumerable from "linq";
-import { DomainConstants } from "../Shared/Generated/DomainConstants";
 import { JobUrlConstants } from "../Shared/Generated/JobUrlConstants";
 import { JobDto } from "../Shared/Generated/JobDto";
 import { RebusConstants } from "../Shared/Generated/RebusConstants";
 import { logError } from "../Shared/logging";
-import { sharedTranslations } from "../Shared/sharedTranslations";
 import { localizedBootboxConfirm } from "../Shared/bootboxHelper";
 
 export function formSubmitWithWaitForJobCompletion(

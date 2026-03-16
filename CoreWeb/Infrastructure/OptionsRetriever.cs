@@ -1,4 +1,7 @@
-﻿namespace MrWatchdog.Web.Infrastructure;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace CoreWeb.Infrastructure;
 
 public static class OptionsRetriever
 {

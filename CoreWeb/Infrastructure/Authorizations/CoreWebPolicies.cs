@@ -1,6 +1,6 @@
-﻿namespace MrWatchdog.Web.Infrastructure.Authorizations;
+﻿namespace CoreWeb.Infrastructure.Authorizations;
 
-public static class Policies
+public static class CoreWebPolicies
 {
     public const string SuperAdmin = nameof(SuperAdmin);
 }

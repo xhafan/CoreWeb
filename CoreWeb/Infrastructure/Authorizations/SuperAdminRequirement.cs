@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace MrWatchdog.Web.Infrastructure.Authorizations;
+namespace CoreWeb.Infrastructure.Authorizations;
 
 public class SuperAdminRequirement : IAuthorizationRequirement;

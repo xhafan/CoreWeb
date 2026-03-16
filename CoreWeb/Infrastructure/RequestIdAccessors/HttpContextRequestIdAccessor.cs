@@ -1,6 +1,7 @@
-﻿using MrWatchdog.Core.Infrastructure.RequestIdAccessors;
+﻿using CoreBackend.Infrastructure.RequestIdAccessors;
+using Microsoft.AspNetCore.Http;
 
-namespace MrWatchdog.Web.Infrastructure.RequestIdAccessors;
+namespace CoreWeb.Infrastructure.RequestIdAccessors;
 
 public class HttpContextRequestIdAccessor(IHttpContextAccessor httpContextAccessor) : IRequestIdAccessor
 {

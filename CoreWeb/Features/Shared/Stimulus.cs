@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Html;
-using MrWatchdog.Core.Infrastructure.Jsons;
+﻿using CoreBackend.Infrastructure.Jsons;
+using Microsoft.AspNetCore.Html;
 
-namespace MrWatchdog.Web.Features.Shared;
+namespace CoreWeb.Features.Shared;
 
 public static class Stimulus
 {

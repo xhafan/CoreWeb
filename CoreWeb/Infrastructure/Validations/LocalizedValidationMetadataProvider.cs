@@ -1,21 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
-using MrWatchdog.Core.Resources;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 
-namespace MrWatchdog.Web.Infrastructure.Validations;
+namespace CoreWeb.Infrastructure.Validations;
 
-public class LocalizedValidationMetadataProvider : IValidationMetadataProvider
+public class LocalizedValidationMetadataProvider(
+    Type resourceType, 
+    Func<string, string?> getErrorMessageTranslationForAttributeTypeName
+) 
+    : IValidationMetadataProvider
 {
     public void CreateValidationMetadata(ValidationMetadataProviderContext context)
     {
         foreach (var attribute in context.ValidationMetadata.ValidatorMetadata.OfType<ValidationAttribute>())
         {
             var attributeType = attribute.GetType().Name;
-            var resourceValue = Resource.ResourceManager.GetString(attributeType);
+            var resourceValue = getErrorMessageTranslationForAttributeTypeName(attributeType);
             if (resourceValue == null) continue;
 
             attribute.ErrorMessageResourceName = attributeType;
-            attribute.ErrorMessageResourceType = typeof(Resource);
+            attribute.ErrorMessageResourceType = resourceType;
             attribute.ErrorMessage = null;
         }
     }
