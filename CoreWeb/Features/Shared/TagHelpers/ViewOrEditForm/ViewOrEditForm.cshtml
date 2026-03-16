@@ -1,0 +1,39 @@
+﻿@using MrWatchdog.Core.Resources
+@using MrWatchdog.Web.Features.Shared
+@model ViewOrEditForm
+
+<form method="post"
+      action="@Model.Action"
+      data-view-or-edit-form-target="form"
+      asp-antiforgery="true"
+      >
+    @Model.ChildContent
+    
+    <div class="row">
+        <div class="col text-end d-flex justify-content-end gap-2">
+
+            <button type="button"
+                    data-view-or-edit-form-target="edit"
+                    data-action="@StimulusControllers.ViewOrEditForm#edit"
+                    class="btn btn-outline-primary"
+                    >
+                @Resource.Edit
+            </button>
+            <button type="button"
+                    data-view-or-edit-form-target="cancel"
+                    data-action="@StimulusControllers.ViewOrEditForm#cancel"
+                    class="btn btn-outline-primary"
+                    style="display: none"
+                    >
+                @Resource.Cancel
+            </button>
+            <button type="submit"
+                    data-view-or-edit-form-target="save"
+                    class="btn btn-primary"
+                    style="display: none"
+                    >
+                @Resource.Save
+            </button>
+        </div>
+    </div>
+</form>
