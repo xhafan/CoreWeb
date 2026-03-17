@@ -1,0 +1,10 @@
+﻿@model Hint
+<a tabindex="0" 
+   data-hint-target="hintLink"
+   data-bs-toggle="popover" 
+   data-bs-trigger="focus"
+   data-bs-html="true"
+   data-bs-content="@Model.Text"
+   >
+    <i class="fa-solid @Model.FontAwesomeIcon"></i>
+</a>

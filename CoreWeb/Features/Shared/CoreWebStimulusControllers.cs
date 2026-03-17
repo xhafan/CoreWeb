@@ -10,4 +10,7 @@ public static class CoreWebStimulusControllers
 
     [TsProperty(Constant = true, ShouldBeCamelCased = true)]
     public const string ViewOrEditForm = "view-or-edit-form";
+
+    [TsProperty(Constant = true, ShouldBeCamelCased = true)]
+    public const string Hint = "hint";
 }
