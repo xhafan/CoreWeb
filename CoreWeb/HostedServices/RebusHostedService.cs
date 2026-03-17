@@ -7,7 +7,6 @@ using CoreDdd.Nhibernate.Configurations;
 using CoreDdd.Rebus.UnitOfWork;
 using CoreDdd.UnitOfWorks;
 using CoreIoC;
-using CoreUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -28,6 +27,7 @@ public class RebusHostedService(
     string inputQueueName,
     string environmentName,
     string connectionString,
+    RebusOptions rebusOptions,
     IEnumerable<Assembly> assembliesWithTypesDerivedFromBaseMessage,
     Func<IResolutionContext, IErrorHandler> errorHandlerFactory,
     Func<Task> onServiceStopped
@@ -43,20 +43,19 @@ public class RebusHostedService(
             isolationLevel: IsolationLevel.ReadCommitted
         );
 
-        var configuration = ioCContainer.Resolve<IConfiguration>();
-
         var rebusConfigurer = rebusConfigurerFactory()
             .Logging(x => x.MicrosoftExtensionsLogging(ioCContainer.Resolve<ILoggerFactory>()));
 
         var environmentInputQueueName = $"{environmentName}{inputQueueName}";
 
-        switch (configuration["Rebus:Transport"])
+        switch (rebusOptions.Transport)
         {
             case "RabbitMQ":
+                var configuration = ioCContainer.Resolve<IConfiguration>();
                 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMQ");
                 rebusConfigurer.Transport(x => x.UseRabbitMq(rabbitMqConnectionString, environmentInputQueueName));
                 break;
-                
+
             case "PostgreSql":
                 // todo: command handler which sends a domain event over the message bus sends the domain event even when the command handler throws: https://github.com/rebus-org/Rebus.PostgreSql/issues/53
                 rebusConfigurer
@@ -66,26 +65,17 @@ public class RebusHostedService(
                         environmentInputQueueName
                     ));
                 break;
-                
+
             case "InMemory":
                 var rebusInMemoryNetwork = ioCContainer.Resolve<InMemNetwork>();
                 rebusConfigurer.Transport(x => x.UseInMemoryTransport(rebusInMemoryNetwork, environmentInputQueueName, registerSubscriptionStorage: false));
                 break;
-                
+
             default:
                 throw new InvalidOperationException("Rebus transport is not configured. Set Rebus:Transport to RabbitMq, PostgreSql, or InMemory in appsettings.json.");
         }
 
-        var defaultNumberOfWorkersAsString = configuration["Rebus:DefaultNumberOfWorkers"];
-        Guard.Hope(defaultNumberOfWorkersAsString != null, "Rebus:DefaultNumberOfWorkers not set.");
-        var numberOfWorkers = int.Parse(defaultNumberOfWorkersAsString);
-
-        var inputQueueNameNumberOfWorkersKey = $"Rebus:{inputQueueName}NumberOfWorkers";
-        var inputQueueNameNumberOfWorkersAsString = configuration[inputQueueNameNumberOfWorkersKey];
-        if (inputQueueNameNumberOfWorkersAsString != null)
-        {
-            numberOfWorkers = int.Parse(inputQueueNameNumberOfWorkersAsString);
-        }
+        var numberOfWorkers = rebusOptions.GetNumberOfWorkers(inputQueueName);
 
         rebusConfigurer
             .Serialization(x => x.UseSystemTextJson(JsonHelper.DefaultOptions))
@@ -100,7 +90,7 @@ public class RebusHostedService(
                     );
                     x.RetryStrategy(
                         errorQueueName: $"{environmentInputQueueName}Error",
-                        maxDeliveryAttempts: RebusConstants.MaxDeliveryAttempts,
+                        maxDeliveryAttempts: rebusOptions.MaxDeliveryAttempts,
                         errorTrackingMaxAgeMinutes: 1440 // 1440 minutes = 24h; this prevents never-ending number of retries for messages whose handling take a long time
                     );
                     x.SetNumberOfWorkers(numberOfWorkers);

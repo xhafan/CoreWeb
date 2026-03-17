@@ -4,6 +4,5 @@
 
 export abstract class RebusConstants
 {
-	public static maxDeliveryAttempts: number = 5;
 	public static rebusMessageCouldNotBeDispatchedToAnyHandlersException: string = `MessageCouldNotBeDispatchedToAnyHandlersException`;
 }
