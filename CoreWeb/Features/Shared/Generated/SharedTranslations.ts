@@ -6,10 +6,8 @@ export interface SharedTranslations
 {
 	ok: string;
 	cancel: string;
-	back: string;
-	next: string;
-	finish: string;
 	error: string;
 	edit: string;
 	save: string;
+	translationByResource: { [key:string]: string };
 }
