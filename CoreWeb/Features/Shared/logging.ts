@@ -1,6 +1,6 @@
 import { LogConstants } from "./Generated/LogConstants";
 import StackTrace from "stacktrace-js";
-import { sharedTranslations } from "./sharedTranslations";
+import { frontendSettings } from "./frontendSettingsHelper";
 import { localizedBootboxAlert } from "./bootboxHelper";
 import { LogsUrlConstants } from "./Generated/LogsUrlConstants";
 
@@ -24,7 +24,7 @@ export async function logError(
     }
     if (showAlertDialog) {
         localizedBootboxAlert({
-            title: `<i class="fa-solid fa-triangle-exclamation text-danger"></i> ${sharedTranslations.error}`,
+            title: `<i class="fa-solid fa-triangle-exclamation text-danger"></i> ${frontendSettings.sharedTranslations.error}`,
             message: errorString,
             centerVertical: true
         });

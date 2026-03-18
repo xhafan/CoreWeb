@@ -4,8 +4,7 @@ import { JobDto } from "../Shared/Generated/JobDto";
 import { RebusConstants } from "../Shared/Generated/RebusConstants";
 import { logError } from "../Shared/logging";
 import { localizedBootboxConfirm } from "../Shared/bootboxHelper";
-
-const maxDeliveryAttempts = 5; // must match Rebus:MaxDeliveryAttempts in appsettings.json
+import { frontendSettings } from "../Shared/frontendSettingsHelper";
 
 export function formSubmitWithWaitForJobCompletion(
     form: HTMLFormElement,
@@ -129,7 +128,7 @@ export async function waitForJobCompletion(jobGuid: string) : Promise<JobDto> {
             if (jobDto.completedOn) {
                 return jobDto;
             }
-            else if (jobDto.numberOfHandlingAttempts >= maxDeliveryAttempts
+            else if (jobDto.numberOfHandlingAttempts >= frontendSettings.rebusOptions.maxDeliveryAttempts
                      || (getJobLastException(jobDto)?.includes(RebusConstants.rebusMessageCouldNotBeDispatchedToAnyHandlersException))) {
                 throw new Error(`Job ${jobDto.guid} failed.`);
             }

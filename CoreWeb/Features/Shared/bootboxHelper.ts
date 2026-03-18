@@ -1,12 +1,12 @@
-import { sharedTranslations } from "./sharedTranslations";
+import { frontendSettings } from "./frontendSettingsHelper";
 
 export function localizedBootboxConfirm(options: BootboxConfirmOptions) {
     options.buttons = {
         confirm: {
-            label: sharedTranslations.ok
+            label: frontendSettings.sharedTranslations.ok
         },
         cancel: {
-            label: sharedTranslations.cancel
+            label: frontendSettings.sharedTranslations.cancel
         }
     };
 
@@ -16,7 +16,7 @@ export function localizedBootboxConfirm(options: BootboxConfirmOptions) {
 export function localizedBootboxAlert(options: BootboxAlertOptions) {
     options.buttons = {
         ok: {
-            label: sharedTranslations.ok
+            label: frontendSettings.sharedTranslations.ok
         }
     };
 
