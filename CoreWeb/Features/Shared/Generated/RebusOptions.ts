@@ -7,9 +7,6 @@ export interface RebusOptions
 	transport: string;
 	maxDeliveryAttempts: number;
 	defaultNumberOfWorkers: number;
-	mainNumberOfWorkers: number;
-	adminBulkNumberOfWorkers: number;
-	scrapingNumberOfWorkers: number;
-	emailNumberOfWorkers: number;
+	numberOfWorkersByQueue: { [key:string]: number };
 	GetNumberOfWorkers(inputQueueName: string) : number;
 }
