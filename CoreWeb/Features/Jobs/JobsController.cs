@@ -1,5 +1,6 @@
 ﻿using CoreBackend.Features.Jobs.Queries;
 using CoreBackend.Infrastructure.Repositories;
+using CoreBackend.Messages;
 using CoreDdd.Queries;
 using CoreUtils;
 using CoreUtils.Extensions;

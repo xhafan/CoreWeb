@@ -1,12 +1,8 @@
-﻿using System.Data;
 using System.Reflection;
 using CoreBackend.Infrastructure.Jsons;
 using CoreBackend.Infrastructure.Rebus;
 using CoreBackend.Infrastructure.Rebus.MessageRouting;
 using CoreDdd.Nhibernate.Configurations;
-using CoreDdd.Rebus.UnitOfWork;
-using CoreDdd.UnitOfWorks;
-using CoreIoC;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,28 +18,22 @@ using Rebus.Transport.InMem;
 namespace CoreWeb.HostedServices;
 
 public class RebusHostedService(
-    Func<RebusConfigurer> rebusConfigurerFactory,
-    IContainer ioCContainer,
+    IRebusHostedServiceContainerSetup containerSetup,
     string inputQueueName,
     string environmentName,
     string connectionString,
     RebusOptions rebusOptions,
     IEnumerable<Assembly> assembliesWithTypesDerivedFromBaseMessage,
-    Func<IResolutionContext, IErrorHandler> errorHandlerFactory,
-    Func<Task> onServiceStopped
-
+    Func<IResolutionContext, IErrorHandler> errorHandlerFactory
 ) : IHostedService
 {
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public async Task StartAsync(CancellationToken cancellationToken)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
-        var rebusUnitOfWork = new RebusUnitOfWork(
-            unitOfWorkFactory: ioCContainer.Resolve<IUnitOfWorkFactory>(),
-            isolationLevel: IsolationLevel.ReadCommitted
-        );
+        var ioCContainer = containerSetup.GetContainer();
 
-        var rebusConfigurer = rebusConfigurerFactory()
+        var rebusConfigurer = containerSetup.CreateRebusConfigurerFactory()()
             .Logging(x => x.MicrosoftExtensionsLogging(ioCContainer.Resolve<ILoggerFactory>()));
 
         var environmentInputQueueName = $"{environmentName}{inputQueueName}";
@@ -77,17 +67,12 @@ public class RebusHostedService(
 
         var numberOfWorkers = rebusOptions.GetNumberOfWorkers(inputQueueName);
 
-        rebusConfigurer
+        var bus = rebusConfigurer
             .Serialization(x => x.UseSystemTextJson(JsonHelper.DefaultOptions))
             .Routing(configurer => MessageRoutingConfigurator.ConfigureMessageRouting(configurer, environmentName, assembliesWithTypesDerivedFromBaseMessage))
             .Options(x =>
                 {
-                    x.EnableAsyncUnitOfWork(
-                        rebusUnitOfWork.CreateAsync,
-                        rebusUnitOfWork.CommitAsync,
-                        rebusUnitOfWork.RollbackAsync,
-                        rebusUnitOfWork.CleanupAsync
-                    );
+                    containerSetup.ConfigureUnitOfWork(x);
                     x.RetryStrategy(
                         errorQueueName: $"{environmentInputQueueName}Error",
                         maxDeliveryAttempts: rebusOptions.MaxDeliveryAttempts,
@@ -98,11 +83,10 @@ public class RebusHostedService(
                     x.Decorate<IPipeline>(resolutionContext =>
                     {
                         var messageLoggingIncomingStep = new MessageLoggingIncomingStep(ioCContainer.Resolve<ILogger<MessageLoggingIncomingStep>>());
-                        
+
                         var jobTrackingIncomingStep = new JobTrackingIncomingStep(
                             ioCContainer.Resolve<INhibernateConfigurator>(),
                             ioCContainer.Resolve<ILogger<JobTrackingIncomingStep>>(),
-                            ioCContainer,
                             ioCContainer.Resolve<IJobCreator>(nameof(NewTransactionJobCreator)),
                             ioCContainer.Resolve<IRebusHandlingQueueGetter>()
                         );
@@ -125,11 +109,12 @@ public class RebusHostedService(
                 }
             )
             .Start();
+
+        containerSetup.OnBusStarted(bus);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await onServiceStopped();
+        await containerSetup.OnServiceStopped();
     }
-
 }

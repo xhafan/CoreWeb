@@ -17,11 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoreDdd.Rebus.UnitOfWork" Version="3.3.1" />
     <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="5.2.0" />
     <PackageReference Include="Rebus.PostgreSql" Version="9.1.1" />
     <PackageReference Include="Rebus.RabbitMq" Version="10.1.1" />
-    <PackageReference Include="Rebus.UnitOfWork" Version="7.0.1" />
     <PackageReference Include="Reinforced.Typings" Version="1.6.7" />
   </ItemGroup>
 

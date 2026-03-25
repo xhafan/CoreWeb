@@ -5,6 +5,7 @@
 export interface RebusOptions
 {
 	transport: string;
+	ioCContainer: string;
 	maxDeliveryAttempts: number;
 	defaultNumberOfWorkers: number;
 	numberOfWorkersByQueue: { [key:string]: number };
