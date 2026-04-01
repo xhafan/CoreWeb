@@ -2,7 +2,6 @@
 using CoreWeb.Features.Shared;
 using Reinforced.Typings.Attributes;
 using Reinforced.Typings.Fluent;
-using ConfigurationBuilder = Reinforced.Typings.Fluent.ConfigurationBuilder;
 
 namespace CoreWeb.Infrastructure;
 
