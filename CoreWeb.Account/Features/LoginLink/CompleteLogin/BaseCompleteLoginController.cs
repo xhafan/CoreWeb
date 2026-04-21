@@ -18,7 +18,7 @@ using Microsoft.Extensions.Options;
 namespace CoreWeb.Account.Features.LoginLink.CompleteLogin;
 
 [ApiController]
-[Route("api/[controller]/[action]")]
+[Route("api/CompleteLogin/[action]")]
 [AllowAnonymous]
 public abstract class BaseCompleteLoginController(
     ICoreBus bus,
