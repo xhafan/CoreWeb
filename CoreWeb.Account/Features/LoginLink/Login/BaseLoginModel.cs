@@ -63,6 +63,8 @@ public abstract class BaseLoginModel(
             return BadRequest(ModelState);
         }
 
+        // ReSharper disable once Mvc.ActionNotResolved
+        // ReSharper disable once Mvc.ControllerNotResolved
         var redirectUrl = Url.Action("CompleteExternalLoginCallback", "CompleteLogin", values: new {ReturnUrl});
         Guard.Hope(redirectUrl != null, nameof(redirectUrl) + " is null");
 
