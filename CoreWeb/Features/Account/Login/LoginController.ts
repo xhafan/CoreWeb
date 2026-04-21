@@ -1,6 +1,6 @@
-import BaseStimulusModelController from "../../../../CoreWeb/Features/Shared/BaseStimulusModelController";
+import BaseStimulusModelController from "../../Shared/BaseStimulusModelController";
 import { LoginStimulusModel } from "../../Shared/Generated/LoginStimulusModel";
-import { disableElementAndAddSpinner } from "../../../../CoreWeb/Features/Jobs/jobCompletion";
+import { disableElementAndAddSpinner } from "../../Jobs/jobCompletion";
 
 export default class LoginController extends BaseStimulusModelController<LoginStimulusModel>  {
     static targets = [

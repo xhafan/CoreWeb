@@ -7,4 +7,6 @@ export abstract class CoreWebStimulusControllers
 	public static turboFrame: string = `turbo-frame`;
 	public static viewOrEditForm: string = `view-or-edit-form`;
 	public static hint: string = `hint`;
+	public static accountLoginLinkSent: string = `account--login-link-sent`;
+	public static accountLogin: string = `account--login`;
 }

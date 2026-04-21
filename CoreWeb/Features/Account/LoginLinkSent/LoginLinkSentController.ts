@@ -1,8 +1,9 @@
 import { Controller } from "@hotwired/stimulus";
-import { formSubmitWithWaitForJobCompletion } from "../../../../CoreWeb/Features/Jobs/jobCompletion";
+import { formSubmitWithWaitForJobCompletion } from "../../Jobs/jobCompletion";
 import Enumerable from "linq";
-import { AccountUrlConstants } from "../../Shared/Generated/AccountUrlConstants";
-import BaseStimulusModelController from "../../../../CoreWeb/Features/Shared/BaseStimulusModelController";
+import { CoreBackendAccountUrlConstants } from "../../Shared/Generated/CoreBackendAccountUrlConstants";
+import { CoreWebAccountUrlConstants } from "../../Shared/Generated/CoreWebAccountUrlConstants";
+import BaseStimulusModelController from "../../Shared/BaseStimulusModelController";
 import { LoginLinkSentStimulusModel } from "../../Shared/Generated/LoginLinkSentStimulusModel";
 import { LoginTokenDto } from "../../Shared/Generated/LoginTokenDto";
 
@@ -13,8 +14,8 @@ export default class LoginLinkSentController extends BaseStimulusModelController
         this.connected = true;
 
         const loginTokenGuid = this.modelValue.loginTokenGuid;
-        const loginTokenConfirmationUrl = AccountUrlConstants.apiGetLoginTokenConfirmationUrlTemplate
-            .replace(AccountUrlConstants.loginTokenGuidVariable, loginTokenGuid);
+        const loginTokenConfirmationUrl = CoreWebAccountUrlConstants.apiGetLoginTokenConfirmationUrlTemplate
+            .replace(CoreBackendAccountUrlConstants.loginTokenGuidVariable, loginTokenGuid);
 
         const interval = setInterval(async () => {
             const loginTokenConfirmationResponse = await fetch(loginTokenConfirmationUrl);
@@ -23,7 +24,7 @@ export default class LoginLinkSentController extends BaseStimulusModelController
                 if (loginTokenConfirmed) {
                     clearInterval(interval);
                     const completeLoginResponse = await fetch(
-                        AccountUrlConstants.apiCompleteLoginUrlTemplate.replace(AccountUrlConstants.loginTokenGuidVariable, loginTokenGuid), 
+                        CoreWebAccountUrlConstants.apiCompleteLoginUrlTemplate.replace(CoreBackendAccountUrlConstants.loginTokenGuidVariable, loginTokenGuid), 
                         {
                             method: "POST"
                         }

@@ -1,4 +1,4 @@
-﻿namespace MrWatchdog.Web.Features.Account.Login;
+﻿namespace CoreWeb.Features.Account.Login;
 
 public class ReCaptchaOptions
 {

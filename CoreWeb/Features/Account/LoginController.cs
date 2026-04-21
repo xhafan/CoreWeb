@@ -1,12 +1,12 @@
-﻿using CoreDdd.Queries;
+﻿using System.ComponentModel.DataAnnotations;
+using CoreBackend.Features.Account.Queries;
+using CoreBackend.Infrastructure.Validations;
+using CoreDdd.Queries;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MrWatchdog.Core.Features.Account.Queries;
-using System.ComponentModel.DataAnnotations;
-using CoreBackend.Infrastructure.Validations;
 
-namespace MrWatchdog.Web.Features.Account;
+namespace CoreWeb.Features.Account;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
