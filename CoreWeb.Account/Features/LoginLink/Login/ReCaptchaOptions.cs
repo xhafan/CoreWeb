@@ -1,4 +1,4 @@
-﻿namespace CoreWeb.Account.Features.Account.Login;
+﻿namespace CoreWeb.Account.Features.LoginLink.Login;
 
 public class ReCaptchaOptions
 {

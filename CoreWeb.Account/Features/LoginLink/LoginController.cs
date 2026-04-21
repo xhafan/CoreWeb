@@ -1,12 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using CoreBackend.Account.Features.Account.Queries;
+using CoreBackend.Account.Features.LoginLink.Queries;
 using CoreBackend.Infrastructure.Validations;
 using CoreDdd.Queries;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CoreWeb.Account.Features.Account;
+namespace CoreWeb.Account.Features.LoginLink;
 
 [ApiController]
 [Route("api/[controller]/[action]")]

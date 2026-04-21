@@ -1,5 +1,5 @@
-﻿using CoreBackend.Account.Features.Account.Domain;
-using CoreWeb.Account.Features.Account;
+﻿using CoreBackend.Account.Features.LoginLink.Domain;
+using CoreWeb.Account.Features.LoginLink;
 using Reinforced.Typings.Attributes;
 using Reinforced.Typings.Fluent;
 

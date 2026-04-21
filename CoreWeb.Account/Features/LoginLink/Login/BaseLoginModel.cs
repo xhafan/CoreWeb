@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using AspNetCore.ReCaptcha;
 using CoreBackend.Account.Features;
-using CoreBackend.Account.Features.Account.Commands;
-using CoreBackend.Account.Features.Account.Domain;
-using CoreBackend.Account.Features.Account.Queries;
+using CoreBackend.Account.Features.LoginLink.Commands;
+using CoreBackend.Account.Features.LoginLink.Domain;
+using CoreBackend.Account.Features.LoginLink.Queries;
 using CoreBackend.Features.Jobs.Queries;
 using CoreBackend.Features.Jobs.Services;
 using CoreBackend.Infrastructure.Rebus;
@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CoreWeb.Account.Features.Account.Login;
+namespace CoreWeb.Account.Features.LoginLink.Login;
 
 [ValidateReCaptcha]
 [AllowAnonymous]

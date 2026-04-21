@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using CoreBackend.Account.Features.Account;
-using CoreBackend.Account.Features.Account.Commands;
-using CoreBackend.Account.Features.Account.Domain;
-using CoreBackend.Account.Features.Account.Queries;
+using CoreBackend.Account.Features.LoginLink;
+using CoreBackend.Account.Features.LoginLink.Commands;
+using CoreBackend.Account.Features.LoginLink.Domain;
+using CoreBackend.Account.Features.LoginLink.Queries;
 using CoreBackend.Features.Jobs.Services;
 using CoreBackend.Infrastructure.Rebus;
 using CoreDdd.Queries;
@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace CoreWeb.Account.Features.Account.ConfirmLogin;
+namespace CoreWeb.Account.Features.LoginLink.ConfirmLogin;
 
 [AllowAnonymous]
 public abstract class BaseConfirmLoginModel(
