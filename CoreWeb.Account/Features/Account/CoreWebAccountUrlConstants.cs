@@ -1,7 +1,7 @@
-﻿using CoreBackend.Features.Account;
+﻿using CoreBackend.Account.Features.Account;
 using Reinforced.Typings.Attributes;
 
-namespace CoreWeb.Features.Account;
+namespace CoreWeb.Account.Features.Account;
 
 [TsClass(IncludeNamespace = false, AutoExportMethods = false)]
 public static class CoreWebAccountUrlConstants

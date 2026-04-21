@@ -1,6 +1,6 @@
 ﻿using Reinforced.Typings.Attributes;
 
-namespace CoreWeb.Features.Account.Login;
+namespace CoreWeb.Account.Features.Account.Login;
 
 [TsInterface(IncludeNamespace = false, AutoI = false)]
 // ReSharper disable once NotAccessedPositionalProperty.Global - ReCaptchaSiteKey parameter only used by Reinforced.Typings

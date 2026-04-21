@@ -1,9 +1,9 @@
 import { Controller } from "@hotwired/stimulus";
-import { formSubmitWithWaitForJobCompletion } from "../../Jobs/jobCompletion";
+import { formSubmitWithWaitForJobCompletion } from "../../../../CoreWeb/Features/Jobs/jobCompletion";
 import Enumerable from "linq";
 import { CoreBackendAccountUrlConstants } from "../../Shared/Generated/CoreBackendAccountUrlConstants";
 import { CoreWebAccountUrlConstants } from "../../Shared/Generated/CoreWebAccountUrlConstants";
-import BaseStimulusModelController from "../../Shared/BaseStimulusModelController";
+import BaseStimulusModelController from "../../../../CoreWeb/Features/Shared/BaseStimulusModelController";
 import { LoginLinkSentStimulusModel } from "../../Shared/Generated/LoginLinkSentStimulusModel";
 import { LoginTokenDto } from "../../Shared/Generated/LoginTokenDto";
 

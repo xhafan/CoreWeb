@@ -1,6 +1,6 @@
 ﻿using Reinforced.Typings.Attributes;
 
-namespace CoreWeb.Features.Account.LoginLinkSent;
+namespace CoreWeb.Account.Features.Account.LoginLinkSent;
 
 [TsInterface(IncludeNamespace = false, AutoI = false)]
 // ReSharper disable once NotAccessedPositionalProperty.Global - LoginTokenGuid parameter only used by Reinforced.Typings

@@ -1,8 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 using AspNetCore.ReCaptcha;
-using CoreBackend.Features;
-using CoreBackend.Features.Account.Commands;
-using CoreBackend.Features.Account.Domain;
-using CoreBackend.Features.Account.Queries;
+using CoreBackend.Account.Features;
+using CoreBackend.Account.Features.Account.Commands;
+using CoreBackend.Account.Features.Account.Domain;
+using CoreBackend.Account.Features.Account.Queries;
 using CoreBackend.Features.Jobs.Queries;
 using CoreBackend.Features.Jobs.Services;
 using CoreBackend.Infrastructure.Rebus;
@@ -13,9 +14,8 @@ using CoreWeb.Features.Shared;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
-namespace CoreWeb.Features.Account.Login;
+namespace CoreWeb.Account.Features.Account.Login;
 
 [ValidateReCaptcha]
 [AllowAnonymous]
@@ -50,7 +50,7 @@ public abstract class BaseLoginModel(
         var jobDto = (
             await queryExecutor.ExecuteAsync<GetJobQuery, JobDto>(new GetJobQuery(commandGuid))
         ).Single();
-        var loginTokenId = jobDto.AffectedEntities.Single(x => x.EntityName == CoreBackendDomainConstants.AccountLoginTokenEntityName).EntityId;
+        var loginTokenId = jobDto.AffectedEntities.Single(x => x.EntityName == CoreBackendAccountDomainConstants.AccountLoginTokenEntityName).EntityId;
         var loginTokenDto = await queryExecutor.ExecuteSingleAsync<GetLoginTokenByIdQuery, LoginTokenDto>(new GetLoginTokenByIdQuery(loginTokenId));
         
         return Redirect(GetAccountLoginLinkSentUrl(loginTokenDto.Guid));

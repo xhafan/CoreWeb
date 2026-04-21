@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using CoreBackend.Features.Account;
-using CoreBackend.Features.Account.Domain;
-using CoreBackend.Features.Account.Queries;
+using CoreBackend.Account.Features.Account;
+using CoreBackend.Account.Features.Account.Domain;
+using CoreBackend.Account.Features.Account.Queries;
 using CoreBackend.Infrastructure.Validations;
 using CoreDdd.Queries;
 using CoreUtils;
@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace CoreWeb.Features.Account.LoginLinkSent;
+namespace CoreWeb.Account.Features.Account.LoginLinkSent;
 
 [AllowAnonymous]
 public abstract class BaseLoginLinkSentModel(
