@@ -19,6 +19,8 @@ git subtree pull --prefix=src/Libraries/CoreWeb https://github.com/xhafan/CoreWe
 git subtree push --prefix=src/Libraries/CoreWeb https://github.com/xhafan/CoreWeb main
 ```
 
+Consumers typically wrap these in a helper script — see [MrWatchdog's `src/subtree.sh`](https://github.com/xhafan/MrWatchdog/blob/main/src/subtree.sh) for a reference implementation.
+
 ## TypeScript
 
 Each project has its own `tsconfig.json` and `package.json`. Consumers bundle TypeScript (e.g. via esbuild in their web app entry project); the Razor class libraries do not ship pre-bundled JavaScript.
