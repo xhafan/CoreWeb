@@ -21,7 +21,7 @@ git subtree push --prefix=src/Libraries/CoreWeb https://github.com/xhafan/CoreWe
 
 ## TypeScript
 
-Each project has its own `tsconfig.json` and `package.json`. Consumers bundle TypeScript (e.g. via esbuild in their web app entry project); the Razor class libraries do not ship pre-bundled JS.
+Each project has its own `tsconfig.json` and `package.json`. Consumers bundle TypeScript (e.g. via esbuild in their web app entry project); the Razor class libraries do not ship pre-bundled JavaScript.
 
 Required npm devDependencies (installed in the consumer's web app):
 
