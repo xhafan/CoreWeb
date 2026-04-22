@@ -1,0 +1,8 @@
+.vs/
+.claude
+bin
+obj
+*.user
+*.bak
+CoreWeb/node_modules
+CoreWeb.Account/node_modules
