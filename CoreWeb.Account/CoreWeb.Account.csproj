@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CoreBackend.Account\CoreBackend.Account.csproj" />
+    <ProjectReference Include="..\..\CoreBackend\CoreBackend.Account\CoreBackend.Account.csproj" />
     <ProjectReference Include="..\CoreWeb\CoreWeb.csproj" />
   </ItemGroup>
 
