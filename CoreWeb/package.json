@@ -1,6 +1,7 @@
 {
   "name": "core-web",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "core-web-tsc": "tsc --noEmit --watch"
   },
