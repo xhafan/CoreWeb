@@ -53,6 +53,18 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                 context.Response.StatusCode
             );
         }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            stopwatch.Stop();
+            var request = context.Request;
+
+            logger.LogInformation(
+                "Request canceled by the client: {Method} {Path} after {Elapsed} ms",
+                request.Method,
+                request.Path + request.QueryString,
+                stopwatch.ElapsedMilliseconds
+            );
+        }
         catch (Exception ex)
         {
             stopwatch.Stop();
