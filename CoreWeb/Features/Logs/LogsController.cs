@@ -11,14 +11,14 @@ using Microsoft.Extensions.Options;
 
 namespace CoreWeb.Features.Logs;
 
-[ApiController]
+[ApiController] // todo: refactor the error email sending into a separate service INotifyError?
 [EnableRateLimiting(RateLimitingConstants.LogErrorsRequestsPerSecondPerUserPolicy)]
 [Route("api/[controller]/[action]")]
 public class LogsController(
     ILogger<LogsController> logger,
     IOptions<LoggingOptions> iLoggingOptions,
-    ICoreBus bus,
-    IOptions<EmailAddressesOptions> iEmailAddressesOptions
+    ICoreBus? bus = null,
+    IOptions<EmailAddressesOptions>? iEmailAddressesOptions = null
 ) : ControllerBase
 {
     [HttpPost]
@@ -47,15 +47,18 @@ public class LogsController(
 
         logger.LogError(safeMessage);
 
-        await bus.Send(new SendEmailCommand(
-            iEmailAddressesOptions.Value.FrontendErrors,
-            $"{safeMessage[..Math.Min(80, safeMessage.Length)]}",
-            HtmlMessage: $"""
-                          RequestId: {HttpContext.TraceIdentifier}<br/>
-                          TimeStamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} UTC<br/>
-                          Message: {safeMessage}
-                          """
-        ));
+        if (bus != null && iEmailAddressesOptions != null)
+        {
+            await bus.Send(new SendEmailCommand(
+                iEmailAddressesOptions.Value.FrontendErrors,
+                $"{safeMessage[..Math.Min(80, safeMessage.Length)]}",
+                HtmlMessage: $"""
+                              RequestId: {HttpContext.TraceIdentifier}<br/>
+                              TimeStamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} UTC<br/>
+                              Message: {safeMessage}
+                              """
+            ));
+        }
 
         return Ok();
     }
