@@ -6,6 +6,7 @@ Reusable web projects (C# Razor class libraries + TypeScript) extracted from [Mr
 
 - `CoreWeb` — Razor class library with shared views, tag helpers, Stimulus controllers, and TypeScript utilities
 - `CoreWeb.Account` — login-link account flow on top of `CoreWeb`
+- `CoreWeb.Tests` — NUnit tests for `CoreWeb`
 
 ## Dependency on CoreBackend
 

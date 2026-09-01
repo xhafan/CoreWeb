@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>CoreWeb.Tests</RootNamespace>
+    <AssemblyName>CoreWeb.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <Import Project="..\..\..\SharedAssemblyInfo.props" />
+
+  <ItemGroup>
+    <None Remove="appsettings.Test.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\CoreBackend\CoreBackend.TestsShared\GlobalUsings.cs" Link="GlobalUsings.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.Test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FakeItEasy" Version="9.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NUnit" Version="4.5.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.1.0" />
+    <PackageReference Include="Shouldly" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CoreBackend\CoreBackend.TestsShared\CoreBackend.TestsShared.csproj" />
+    <ProjectReference Include="..\CoreWeb\CoreWeb.csproj" />
+  </ItemGroup>
+
+</Project>
