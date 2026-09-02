@@ -1,6 +1,5 @@
-﻿using CoreBackend.Infrastructure;
-using CoreBackend.Infrastructure.EmailSenders;
-using CoreBackend.Infrastructure.Rebus;
+using CoreBackend.Infrastructure;
+using CoreBackend.Infrastructure.ErrorReporting;
 using CoreUtils;
 using CoreWeb.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
@@ -11,14 +10,13 @@ using Microsoft.Extensions.Options;
 
 namespace CoreWeb.Features.Logs;
 
-[ApiController] // todo: refactor the error email sending into a separate service INotifyError?
+[ApiController]
 [EnableRateLimiting(RateLimitingConstants.LogErrorsRequestsPerSecondPerUserPolicy)]
 [Route("api/[controller]/[action]")]
 public class LogsController(
     ILogger<LogsController> logger,
     IOptions<LoggingOptions> iLoggingOptions,
-    ICoreBus? bus = null,
-    IOptions<EmailAddressesOptions>? iEmailAddressesOptions = null
+    IErrorReporter errorReporter
 ) : ControllerBase
 {
     [HttpPost]
@@ -26,7 +24,7 @@ public class LogsController(
     [RequestSizeLimit(LogConstants.MaxLogMessageLength + 500)] // 500 bytes buffer
     public async Task<IActionResult> LogError([FromBody] string message)
     {
-        Guard.Hope(!string.IsNullOrWhiteSpace(iLoggingOptions.Value.LogErrorApiSecret), 
+        Guard.Hope(!string.IsNullOrWhiteSpace(iLoggingOptions.Value.LogErrorApiSecret),
             $"{LogConstants.LoggingConfigurationSectionName}:{nameof(LoggingOptions.LogErrorApiSecret)} is not set.");
 
         var headers = HttpContext.Request.Headers;
@@ -41,23 +39,29 @@ public class LogsController(
             return BadRequest("Message cannot be empty.");
         }
 
-        var safeMessage = message.Length > LogConstants.MaxLogMessageLength 
-            ? message.Substring(0, LogConstants.MaxLogMessageLength) + "…[truncated]" 
+        var safeMessage = message.Length > LogConstants.MaxLogMessageLength
+            ? message.Substring(0, LogConstants.MaxLogMessageLength) + "…[truncated]"
             : message;
 
         logger.LogError(safeMessage);
 
-        if (bus != null && iEmailAddressesOptions != null)
+        var errorReport = new ErrorReport(
+            safeMessage,
+            HttpContext.TraceIdentifier,
+            DateTime.UtcNow
+        );
+        try
         {
-            await bus.Send(new SendEmailCommand(
-                iEmailAddressesOptions.Value.FrontendErrors,
-                $"{safeMessage[..Math.Min(80, safeMessage.Length)]}",
-                HtmlMessage: $"""
-                              RequestId: {HttpContext.TraceIdentifier}<br/>
-                              TimeStamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} UTC<br/>
-                              Message: {safeMessage}
-                              """
-            ));
+            await errorReporter.Report(errorReport, HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "{ErrorReporterType} failed reporting frontend error. RequestId {RequestId}",
+                errorReporter.GetType().Name,
+                HttpContext.TraceIdentifier
+            );
         }
 
         return Ok();
