@@ -1,32 +1,12 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using CoreWeb.Infrastructure.BotDetection;
 using Microsoft.Extensions.Logging;
 
 namespace CoreWeb.Infrastructure.Middlewares;
 
-public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger, IRequestBotClassifier botClassifier)
 {
-    private const string BotClassificationBot = "Bot";
-    private const string BotClassificationNotBot = "NotBot";
-    private const string BotClassificationUnknown = "Unknown";
-
-    private static readonly string[] BotMarkers =
-    [
-        "bot",
-        "crawler",
-        "spider",
-        "slurp",
-        "facebookexternalhit",
-        "curl/",
-        "wget/",
-        "python-requests",
-        "go-http-client",
-        "headlesschrome",
-        "postmanruntime",
-        "axios/",
-        "okhttp/"
-    ];
-
     private static readonly string[] HeadersToLog =
     [
         "User-Agent",
@@ -51,7 +31,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             var connection = context.Connection;
             var endpointName = context.GetEndpoint()?.DisplayName ?? "Unknown";
             var turboFrame = request.Headers["Turbo-Frame"].ToString();
-            var botClassification = _classifyBot(request.Headers.UserAgent.ToString());
+            var botClassification = botClassifier.Classify(new RequestBotInput(request.Headers.UserAgent.ToString(), connection.RemoteIpAddress));
 
             var headers = request.Headers
                 .Where(h => HeadersToLog.Contains(h.Key, StringComparer.OrdinalIgnoreCase))
@@ -80,7 +60,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                                 ) == true;
 
             logger.LogInformation(
-                "Request completed: {Method} {Path} in {Elapsed} ms with status {StatusCode}; Endpoint={EndpointName}; IsPageRequest={IsPageRequest}; TurboFrame={TurboFrame}; BotClassification={BotClassification}",
+                "Request completed: {Method} {Path} in {Elapsed} ms with status {StatusCode}; Endpoint={EndpointName}; IsPageRequest={IsPageRequest}; TurboFrame={TurboFrame}; BotClassification={BotClassification}; BotName={BotName}; BotClassificationReason={BotClassificationReason}; BotRulesVersion={BotRulesVersion}",
                 request.Method,
                 request.Path + request.QueryString,
                 stopwatch.ElapsedMilliseconds,
@@ -88,7 +68,10 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                 endpointName,
                 isPageRequest,
                 turboFrame,
-                botClassification
+                botClassification.Classification,
+                botClassification.BotName,
+                botClassification.Reason,
+                botClassification.RulesVersion
             );
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
@@ -117,15 +100,4 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         }
     }
 
-    private static string _classifyBot(string userAgent)
-    {
-        if (string.IsNullOrWhiteSpace(userAgent))
-        {
-            return BotClassificationUnknown;
-        }
-
-        return BotMarkers.Any(marker => userAgent.Contains(marker, StringComparison.OrdinalIgnoreCase))
-            ? BotClassificationBot
-            : BotClassificationNotBot;
-    }
 }
