@@ -1,6 +1,4 @@
 using CoreWeb.Infrastructure.Middlewares;
-using CoreWeb.Infrastructure.BotDetection;
-using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +17,7 @@ public class when_logging_requests
         context.Request.Method = HttpMethods.Get;
         context.Request.Path = "/en/destinations/destination-1/prague";
         context.Request.Headers[headerName] = headerValue;
-        var middleware = new RequestLoggingMiddleware(_ => Task.CompletedTask, new CapturingLogger(messages), new RecordingClassifier());
+        var middleware = new RequestLoggingMiddleware(_ => Task.CompletedTask, new CapturingLogger(messages));
 
         await middleware.InvokeAsync(context);
 
@@ -42,8 +40,7 @@ public class when_logging_requests
                 httpContext.Response.ContentType = "text/html; charset=utf-8";
                 return Task.CompletedTask;
             },
-            new CapturingStructuredLogger(entries),
-            new RecordingClassifier()
+            new CapturingStructuredLogger(entries)
         );
 
         await middleware.InvokeAsync(context);
@@ -71,8 +68,7 @@ public class when_logging_requests
                 httpContext.Response.ContentType = "text/html";
                 return Task.CompletedTask;
             },
-            new CapturingStructuredLogger(entries),
-            new RecordingClassifier(new("Bot", "Googlebot", "MaintainedUserAgentSignature", "DeviceDetector.NET/6.5.2;smartguide/1"))
+            new CapturingStructuredLogger(entries)
         );
 
         await middleware.InvokeAsync(context);
@@ -91,8 +87,7 @@ public class when_logging_requests
         context.Request.Method = HttpMethods.Get;
         var middleware = new RequestLoggingMiddleware(
             _ => Task.CompletedTask,
-            new CapturingStructuredLogger(entries),
-            new RecordingClassifier(new("Unknown", "", "MissingUserAgent", "DeviceDetector.NET/6.5.2;smartguide/1"))
+            new CapturingStructuredLogger(entries)
         );
 
         await middleware.InvokeAsync(context);
@@ -116,7 +111,7 @@ public class when_logging_requests
         {
             httpContext.Response.ContentType = contentType;
             return Task.CompletedTask;
-        }, new CapturingStructuredLogger(entries), new RecordingClassifier());
+        }, new CapturingStructuredLogger(entries));
 
         await middleware.InvokeAsync(context);
 
@@ -127,33 +122,26 @@ public class when_logging_requests
     [TestCase(302)]
     [TestCase(404)]
     [TestCase(500)]
-    public async Task classifier_metadata_is_logged_without_changing_the_response(int status)
+    public async Task bot_classification_is_logged_without_changing_the_response(int status)
     {
         var entries = new List<LogEntry>();
-        var classifier = new RecordingClassifier(new("Bot", "Googlebot", "MaintainedUserAgentSignature", "DeviceDetector.NET/6.5.2;smartguide/1"));
         var context = new DefaultHttpContext();
         context.Request.Method = "GET";
         context.Request.Headers.UserAgent = "Googlebot/2.1";
-        context.Connection.RemoteIpAddress = IPAddress.Parse("203.0.113.2");
         context.Response.Body = new MemoryStream();
         var middleware = new RequestLoggingMiddleware(async httpContext =>
         {
             httpContext.Response.StatusCode = status;
             httpContext.Response.ContentType = "text/html";
             await httpContext.Response.WriteAsync("unchanged");
-        }, new CapturingStructuredLogger(entries), classifier);
+        }, new CapturingStructuredLogger(entries));
 
         await middleware.InvokeAsync(context);
 
         var properties = _completed(entries).Properties;
         properties["StatusCode"].ShouldBe(status);
         properties["BotClassification"].ShouldBe("Bot");
-        properties["BotName"].ShouldBe("Googlebot");
-        properties["BotClassificationReason"].ShouldBe("MaintainedUserAgentSignature");
-        properties["BotRulesVersion"].ShouldBe("DeviceDetector.NET/6.5.2;smartguide/1");
         properties["IsPageRequest"].ShouldBe(true);
-        classifier.Input.ShouldBe(new("Googlebot/2.1", IPAddress.Parse("203.0.113.2")));
-        classifier.Calls.ShouldBe(1);
         context.Response.StatusCode.ShouldBe(status);
         context.Response.Body.Position = 0;
         (await new StreamReader(context.Response.Body).ReadToEndAsync()).ShouldBe("unchanged");
@@ -162,10 +150,9 @@ public class when_logging_requests
     [TestCase("Purpose", "?__hsfp=value")]
     [TestCase("X-Sec-Purpose", "?_gl=value")]
     [TestCase("Sec-Purpose", "?__hssc=value&utm_source=email")]
-    public async Task prefetch_and_tracking_parameters_are_not_classifier_inputs_or_page_exclusions(string header, string query)
+    public async Task prefetch_and_tracking_parameters_do_not_classify_bots_or_exclude_pages(string header, string query)
     {
         var entries = new List<LogEntry>();
-        var classifier = new RecordingClassifier();
         var context = new DefaultHttpContext();
         context.Request.Method = "GET";
         context.Request.Path = "/";
@@ -176,11 +163,10 @@ public class when_logging_requests
         {
             httpContext.Response.ContentType = "text/html";
             return Task.CompletedTask;
-        }, new CapturingStructuredLogger(entries), classifier);
+        }, new CapturingStructuredLogger(entries));
 
         await middleware.InvokeAsync(context);
 
-        classifier.Input.ShouldBe(new("Browser", null));
         _completed(entries).Properties["Path"].ShouldBe("/" + query);
         _completed(entries).Properties["IsPageRequest"].ShouldBe(true);
         _completed(entries).Properties["BotClassification"].ShouldBe("NotBot");
@@ -191,25 +177,48 @@ public class when_logging_requests
     {
         var entries = new List<LogEntry>();
         var failure = new InvalidOperationException("downstream failure");
-        var middleware = new RequestLoggingMiddleware(_ => throw failure, new CapturingStructuredLogger(entries), new RecordingClassifier());
+        var middleware = new RequestLoggingMiddleware(_ => throw failure, new CapturingStructuredLogger(entries));
         (await Should.ThrowAsync<InvalidOperationException>(() => middleware.InvokeAsync(new DefaultHttpContext()))).ShouldBeSameAs(failure);
         entries.ShouldContain(entry => entry.Message.StartsWith("Request failed", StringComparison.Ordinal));
         entries.ShouldNotContain(entry => entry.Message.StartsWith("Request completed", StringComparison.Ordinal));
     }
 
-    private static LogEntry _completed(List<LogEntry> entries) => entries.Single(entry => entry.Message.StartsWith("Request completed:", StringComparison.Ordinal));
-
-    private sealed class RecordingClassifier(RequestBotClassification? result = null) : IRequestBotClassifier
+    [TestCase("GoogleBoT/2.1", "Bot")]
+    [TestCase("CustomCaSeCrAwLeR/1.0", "Bot")]
+    [TestCase("CustomSpIdEr/1.0", "Bot")]
+    [TestCase("SLURP/1.0", "Bot")]
+    [TestCase("FACEBOOKEXTERNALHIT/1.1", "Bot")]
+    [TestCase("CURL/8.0", "Bot")]
+    [TestCase("WGET/1.0", "Bot")]
+    [TestCase("PYTHON-REQUESTS/2.0", "Bot")]
+    [TestCase("GO-HTTP-CLIENT/1.1", "Bot")]
+    [TestCase("HEADLESSCHROME/140.0", "Bot")]
+    [TestCase("POSTMANRUNTIME/7.0", "Bot")]
+    [TestCase("AXIOS/1.0", "Bot")]
+    [TestCase("OKHTTP/4.0", "Bot")]
+    [TestCase("Mozilla/5.0 Chrome/140.0", "NotBot")]
+    [TestCase("Mozilla/5.0 (iPhone) [FBAN/FBIOS;FBAV/1.0]", "NotBot")]
+    [TestCase("Browser", "NotBot")]
+    [TestCase(null, "Unknown")]
+    [TestCase("", "Unknown")]
+    [TestCase("   ", "Unknown")]
+    public async Task completed_requests_use_case_insensitive_user_agent_keywords(string? userAgent, string classification)
     {
-        public RequestBotInput? Input { get; private set; }
-        public int Calls { get; private set; }
-        public RequestBotClassification Classify(RequestBotInput input)
+        var entries = new List<LogEntry>();
+        var context = new DefaultHttpContext();
+        if (userAgent != null)
         {
-            Input = input;
-            Calls++;
-            return result ?? new("NotBot", "", "NoKnownBotMatch", "DeviceDetector.NET/6.5.2;smartguide/1");
+            context.Request.Headers.UserAgent = userAgent;
         }
+
+        var middleware = new RequestLoggingMiddleware(_ => Task.CompletedTask, new CapturingStructuredLogger(entries));
+
+        await middleware.InvokeAsync(context);
+
+        _completed(entries).Properties["BotClassification"].ShouldBe(classification);
     }
+
+    private static LogEntry _completed(List<LogEntry> entries) => entries.Single(entry => entry.Message.StartsWith("Request completed:", StringComparison.Ordinal));
 
     private sealed class CapturingLogger(List<string> messages) : ILogger<RequestLoggingMiddleware>
     {

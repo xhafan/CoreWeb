@@ -1,12 +1,32 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using CoreWeb.Infrastructure.BotDetection;
 using Microsoft.Extensions.Logging;
 
 namespace CoreWeb.Infrastructure.Middlewares;
 
-public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger, IRequestBotClassifier botClassifier)
+public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
 {
+    private const string BotClassificationBot = "Bot";
+    private const string BotClassificationNotBot = "NotBot";
+    private const string BotClassificationUnknown = "Unknown";
+
+    private static readonly string[] BotMarkers =
+    [
+        "bot",
+        "crawler",
+        "spider",
+        "slurp",
+        "facebookexternalhit",
+        "curl/",
+        "wget/",
+        "python-requests",
+        "go-http-client",
+        "headlesschrome",
+        "postmanruntime",
+        "axios/",
+        "okhttp/"
+    ];
+
     private static readonly string[] HeadersToLog =
     [
         "User-Agent",
@@ -20,7 +40,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         "Content-Type",
         "Content-Length"
     ];
-    
+
     public async Task InvokeAsync(HttpContext context)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -33,13 +53,13 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             var isInternalFragment = context.GetEndpoint()?.Metadata
                 .GetMetadata<IInternalFragmentEndpointMetadata>()?.IsInternalFragment == true;
             var turboFrame = request.Headers["Turbo-Frame"].ToString();
-            var botClassification = botClassifier.Classify(new RequestBotInput(request.Headers.UserAgent.ToString(), connection.RemoteIpAddress));
+            var botClassification = _classifyBot(request.Headers.UserAgent.ToString());
 
             var headers = request.Headers
                 .Where(h => HeadersToLog.Contains(h.Key, StringComparer.OrdinalIgnoreCase))
                 .Select(h => $"{h.Key}={h.Value}")
                 .ToArray();
-            
+
             logger.LogInformation(
                 "Request started: {Method} {Path} {Protocol} from {RemoteIp}:{RemotePort}, Headers: {Headers}",
                 request.Method,
@@ -63,7 +83,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                                 ) == true;
 
             logger.LogInformation(
-                "Request completed: {Method} {Path} in {Elapsed} ms with status {StatusCode}; Endpoint={EndpointName}; IsPageRequest={IsPageRequest}; TurboFrame={TurboFrame}; BotClassification={BotClassification}; BotName={BotName}; BotClassificationReason={BotClassificationReason}; BotRulesVersion={BotRulesVersion}",
+                "Request completed: {Method} {Path} in {Elapsed} ms with status {StatusCode}; Endpoint={EndpointName}; IsPageRequest={IsPageRequest}; TurboFrame={TurboFrame}; BotClassification={BotClassification}",
                 request.Method,
                 request.Path + request.QueryString,
                 stopwatch.ElapsedMilliseconds,
@@ -71,10 +91,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
                 endpointName,
                 isPageRequest,
                 turboFrame,
-                botClassification.Classification,
-                botClassification.BotName,
-                botClassification.Reason,
-                botClassification.RulesVersion
+                botClassification
             );
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
@@ -103,4 +120,15 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         }
     }
 
+    private static string _classifyBot(string userAgent)
+    {
+        if (string.IsNullOrWhiteSpace(userAgent))
+        {
+            return BotClassificationUnknown;
+        }
+
+        return BotMarkers.Any(marker => userAgent.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            ? BotClassificationBot
+            : BotClassificationNotBot;
+    }
 }
