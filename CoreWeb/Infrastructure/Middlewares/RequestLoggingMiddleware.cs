@@ -50,8 +50,8 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             var request = context.Request;
             var connection = context.Connection;
             var endpointName = context.GetEndpoint()?.DisplayName ?? "Unknown";
-            var isInternalFragment = context.GetEndpoint()?.Metadata
-                .GetMetadata<IInternalFragmentEndpointMetadata>()?.IsInternalFragment == true;
+            var isInternalFrame = context.GetEndpoint()?.Metadata
+                .GetMetadata<IInternalFrameEndpointMetadata>()?.IsInternalFrame == true;
             var turboFrame = request.Headers["Turbo-Frame"].ToString();
             var botClassification = _classifyBot(request.Headers.UserAgent.ToString());
 
@@ -75,7 +75,7 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
             stopwatch.Stop();
 
             var isPageRequest = HttpMethods.IsGet(request.Method)
-                                && !isInternalFragment
+                                && !isInternalFrame
                                 && string.IsNullOrEmpty(turboFrame)
                                 && context.Response.ContentType?.StartsWith(
                                     "text/html",
