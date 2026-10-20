@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using CoreBackend.Infrastructure.ErrorReporting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -110,11 +111,14 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         {
             stopwatch.Stop();
 
-            logger.LogError(
-                ex,
-                "Request failed after {Elapsed} ms",
-                stopwatch.ElapsedMilliseconds
-            );
+            using (ErrorReportingLogPolicy.Suppress())
+            {
+                logger.LogError(
+                    ex,
+                    "Request failed after {Elapsed} ms",
+                    stopwatch.ElapsedMilliseconds
+                );
+            }
 
             throw;
         }
