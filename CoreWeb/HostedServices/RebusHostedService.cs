@@ -97,6 +97,7 @@ public class RebusHostedService(
 
                         var pipeline = resolutionContext.Get<IPipeline>();
                         return new PipelineStepInjector(pipeline)
+                                .OnReceive(new SuppressErrorReportingDuringMessageHandlingStep(), PipelineRelativePosition.Before, typeof(DeserializeIncomingMessageStep))
                                 .OnReceive(messageLoggingIncomingStep, PipelineRelativePosition.After, typeof(DeserializeIncomingMessageStep))
                                 .OnReceive(jobTrackingIncomingStep, PipelineRelativePosition.After, typeof(DeserializeIncomingMessageStep))
                                 .OnReceive(jobCompletionIncomingStep, PipelineRelativePosition.Before, typeof(ActivateHandlersStep))

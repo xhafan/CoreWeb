@@ -3,6 +3,7 @@ using CoreBackend.Infrastructure.ErrorReporting;
 using CoreUtils;
 using CoreWeb.Infrastructure.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
@@ -15,14 +16,13 @@ namespace CoreWeb.Features.Logs;
 [Route("api/[controller]/[action]")]
 public class LogsController(
     ILogger<LogsController> logger,
-    IOptions<LoggingOptions> iLoggingOptions,
-    IErrorReporter errorReporter
+    IOptions<LoggingOptions> iLoggingOptions
 ) : ControllerBase
 {
     [HttpPost]
     [AllowAnonymous]
     [RequestSizeLimit(LogConstants.MaxLogMessageLength + 500)] // 500 bytes buffer
-    public async Task<IActionResult> LogError([FromBody] string message)
+    public IActionResult LogError([FromBody] string message)
     {
         Guard.Hope(!string.IsNullOrWhiteSpace(iLoggingOptions.Value.LogErrorApiSecret),
             $"{LogConstants.LoggingConfigurationSectionName}:{nameof(LoggingOptions.LogErrorApiSecret)} is not set.");
@@ -31,7 +31,7 @@ public class LogsController(
         if (!headers.ContainsKey(LogConstants.LogErrorApiSecretHeaderName)
             || headers[LogConstants.LogErrorApiSecretHeaderName].ToString() != iLoggingOptions.Value.LogErrorApiSecret)
         {
-            return Forbid();
+            return StatusCode(StatusCodes.Status403Forbidden);
         }
 
         if (string.IsNullOrWhiteSpace(message))
@@ -43,26 +43,7 @@ public class LogsController(
             ? message.Substring(0, LogConstants.MaxLogMessageLength) + "…[truncated]"
             : message;
 
-        logger.LogError(safeMessage);
-
-        var errorReport = new ErrorReport(
-            safeMessage,
-            HttpContext.TraceIdentifier,
-            DateTime.UtcNow
-        );
-        try
-        {
-            await errorReporter.Report(errorReport, HttpContext.RequestAborted);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(
-                ex,
-                "{ErrorReporterType} failed reporting frontend error. RequestId {RequestId}",
-                errorReporter.GetType().Name,
-                HttpContext.TraceIdentifier
-            );
-        }
+        logger.LogError(ErrorReportingEventIds.BrowserError, safeMessage);
 
         return Ok();
     }
