@@ -3,9 +3,15 @@
   <PropertyGroup>
     <RootNamespace>CoreWeb.Tests</RootNamespace>
     <AssemblyName>CoreWeb.Tests</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>CS0618</WarningsNotAsErrors>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
-
-  <Import Project="..\..\..\SharedAssemblyInfo.props" />
 
   <ItemGroup>
     <None Remove="appsettings.Test.json" />
@@ -13,6 +19,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\CoreBackend\CoreBackend.TestsShared\GlobalUsings.cs" Link="GlobalUsings.cs" />
+    <Compile Include="..\..\CoreBackend\CoreBackend.TestsShared\TestConfig.cs" Link="TestConfig.cs" />
   </ItemGroup>
 
   <ItemGroup>
