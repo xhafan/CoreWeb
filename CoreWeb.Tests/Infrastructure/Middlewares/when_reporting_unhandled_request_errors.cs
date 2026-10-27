@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using CoreBackend.Infrastructure.ErrorReporting;
+using CoreBackend.TestsShared.Infrastructure.ErrorReporting;
 using CoreWeb.Infrastructure.Middlewares;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -67,7 +68,7 @@ public class when_reporting_unhandled_request_errors
         await Invoke(CreateContext("logged-request", "/logged-error"));
 
         var reporter = new RecordingReporter();
-        using var delivery = new ErrorReportDeliveryBackgroundService(queue, reporter);
+        using var delivery = new ErrorReportDeliveryBackgroundService(queue, reporter, ErrorReportTestServices.CreateGate());
         await delivery.StartAsync(CancellationToken.None);
         await delivery.StopAsync(CancellationToken.None);
 

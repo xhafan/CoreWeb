@@ -1,5 +1,6 @@
 using CoreBackend.Infrastructure;
 using CoreBackend.Infrastructure.ErrorReporting;
+using CoreBackend.TestsShared.Infrastructure.ErrorReporting;
 using CoreBackend.TestsShared;
 using CoreWeb.Features.Logs;
 using CoreWeb.Infrastructure.Middlewares;
@@ -43,7 +44,7 @@ public class when_preventing_duplicate_error_reports
         result.ShouldBeOfType<OkResult>();
         reporter.Reports.ShouldBeEmpty();
 
-        using var delivery = new ErrorReportDeliveryBackgroundService(queue, reporter);
+        using var delivery = new ErrorReportDeliveryBackgroundService(queue, reporter, ErrorReportTestServices.CreateGate());
         await delivery.StartAsync(CancellationToken.None);
         await delivery.StopAsync(CancellationToken.None);
 
