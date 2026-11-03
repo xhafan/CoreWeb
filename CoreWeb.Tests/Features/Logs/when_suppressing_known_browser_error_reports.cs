@@ -24,8 +24,42 @@ namespace CoreWeb.Tests.Features.Logs;
 public class when_suppressing_known_browser_error_reports
 {
     private const string KnownMessage = """JS error: {"value":"Object Not Found Matching Id:1, MethodName:update, ParamCount:4"}""";
+    private const string OpaqueScriptError = """JS error: {"value":"Script error.","source":"","lineno":0,"colno":0}""";
     private const string KnownAudioMessage = """JS error: {"message":"Failed to load because no supported source was found.","name":"NotSupportedError","component":"persistent-audio-player","playbackAction":"request","mediaId":"1374527","mediaUrl":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","currentSrc":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","mediaErrorCode":4,"mediaErrorMessage":"MEDIA_ELEMENT_ERROR: Format error","networkState":3,"readyState":0,"staleAttempt":false}""";
     private const string ReasonPropertyName = "BrowserErrorSuppressionReason";
+
+    [Test]
+    public async Task it_keeps_the_raw_opaque_script_error_without_delivering_an_alert()
+    {
+        await using var pipeline = new TestPipeline();
+
+        (await pipeline.LogBrowserAsync(OpaqueScriptError)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldBeEmpty();
+        var logEvent = pipeline.Events.ShouldHaveSingleItem();
+        logEvent.Level.ShouldBe(LogEventLevel.Error);
+        logEvent.RenderMessage().ShouldBe(OpaqueScriptError);
+        logEvent.Properties[ErrorReportingLogPolicy.SuppressPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe(true);
+        logEvent.Properties[ReasonPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe("OpaqueScriptError");
+    }
+
+    [TestCase("Script error.", "Script error?")]
+    [TestCase("\"source\":\"\"", "\"source\":\"https://cdn.example.com/script.js\"")]
+    [TestCase("\"lineno\":0", "\"lineno\":1")]
+    [TestCase("\"colno\":0", "\"colno\":1")]
+    [TestCase("JS error: ", "")]
+    public async Task it_reports_script_errors_with_other_messages_or_source_details(string original, string replacement)
+    {
+        await using var pipeline = new TestPipeline();
+        var message = OpaqueScriptError.Replace(original, replacement);
+
+        (await pipeline.LogBrowserAsync(message)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldHaveSingleItem().Message.ShouldStartWith(message);
+        AssertUnsuppressed(pipeline.Events.ShouldHaveSingleItem());
+    }
 
     [TestCaseSource(nameof(MatchingAudioMessages))]
     public async Task it_keeps_the_raw_audio_format_error_without_delivering_an_alert(string message)
