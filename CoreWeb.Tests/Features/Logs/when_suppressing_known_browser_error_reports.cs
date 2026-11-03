@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using CoreBackend.Infrastructure;
 using CoreBackend.Infrastructure.ErrorReporting;
 using CoreBackend.TestsShared.Infrastructure.ErrorReporting;
@@ -22,7 +24,36 @@ namespace CoreWeb.Tests.Features.Logs;
 public class when_suppressing_known_browser_error_reports
 {
     private const string KnownMessage = """JS error: {"value":"Object Not Found Matching Id:1, MethodName:update, ParamCount:4"}""";
+    private const string KnownAudioMessage = """JS error: {"message":"Failed to load because no supported source was found.","name":"NotSupportedError","component":"persistent-audio-player","playbackAction":"request","mediaId":"1374527","mediaUrl":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","currentSrc":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","mediaErrorCode":4,"mediaErrorMessage":"MEDIA_ELEMENT_ERROR: Format error","networkState":3,"readyState":0,"staleAttempt":false}""";
     private const string ReasonPropertyName = "BrowserErrorSuppressionReason";
+
+    [TestCaseSource(nameof(MatchingAudioMessages))]
+    public async Task it_keeps_the_raw_audio_format_error_without_delivering_an_alert(string message)
+    {
+        await using var pipeline = new TestPipeline();
+
+        (await pipeline.LogBrowserAsync(message)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldBeEmpty();
+        var logEvent = pipeline.Events.ShouldHaveSingleItem();
+        logEvent.Level.ShouldBe(LogEventLevel.Error);
+        logEvent.RenderMessage().ShouldBe(message);
+        logEvent.Properties[ErrorReportingLogPolicy.SuppressPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe(true);
+        logEvent.Properties[ReasonPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe("PersistentAudioSourceFormatError");
+    }
+
+    [TestCaseSource(nameof(UnmatchedAudioMessages))]
+    public async Task it_reports_other_audio_failures_and_unexpected_envelopes(string message)
+    {
+        await using var pipeline = new TestPipeline();
+
+        (await pipeline.LogBrowserAsync(message)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldHaveSingleItem().Message.ShouldStartWith(message);
+        AssertUnsuppressed(pipeline.Events.ShouldHaveSingleItem());
+    }
 
     [TestCase("1")]
     [TestCase("42")]
@@ -98,19 +129,20 @@ public class when_suppressing_known_browser_error_reports
         pipeline.Reports.ShouldBeEmpty();
     }
 
-    [Test]
-    public async Task it_does_not_leak_suppression_to_other_errors()
+    [TestCase(KnownMessage)]
+    [TestCase(KnownAudioMessage)]
+    public async Task it_does_not_leak_suppression_to_other_errors(string suppressedMessage)
     {
         await using var pipeline = new TestPipeline();
-        await pipeline.LogBrowserAsync(KnownMessage);
+        await pipeline.LogBrowserAsync(suppressedMessage);
         await pipeline.LogBrowserAsync("Ordinary browser failure");
-        pipeline.LogServer(KnownMessage);
+        pipeline.LogServer(suppressedMessage);
         await pipeline.DrainAsync();
 
         pipeline.Reports.Count.ShouldBe(2);
         pipeline.Reports.Single(report => report.Origin == ErrorReportOrigin.Browser).Message
             .ShouldStartWith("Ordinary browser failure");
-        pipeline.Reports.Single(report => report.Origin == ErrorReportOrigin.Server).Message.ShouldStartWith(KnownMessage);
+        pipeline.Reports.Single(report => report.Origin == ErrorReportOrigin.Server).Message.ShouldStartWith(suppressedMessage);
         var subsequentEvents = pipeline.Events.Skip(1).ToArray();
         subsequentEvents.Length.ShouldBe(2);
         foreach (var logEvent in subsequentEvents) AssertUnsuppressed(logEvent);
@@ -121,6 +153,45 @@ public class when_suppressing_known_browser_error_reports
         logEvent.Level.ShouldBe(LogEventLevel.Error);
         logEvent.Properties.ShouldNotContainKey(ErrorReportingLogPolicy.SuppressPropertyName);
         logEvent.Properties.ShouldNotContainKey(ReasonPropertyName);
+    }
+
+    private static IEnumerable<string> MatchingAudioMessages()
+    {
+        yield return KnownAudioMessage;
+        yield return KnownAudioMessage.Replace("1374527", "different-track").Replace(".mp3", ".wav?x=1&y=2");
+        yield return KnownAudioMessage.Replace("\"request\"", "\"toggle\"");
+        yield return KnownAudioMessage.Replace("Failed to load because no supported source was found.", "The element has no supported sources.");
+        yield return KnownAudioMessage.Replace("MEDIA_ELEMENT_ERROR: Format error", "PipelineStatus::DEMUXER_ERROR_COULD_NOT_OPEN: FFmpegDemuxer: open context failed");
+        yield return KnownAudioMessage[..^1] + """, "stack":"Error: failed\n at play (https://example.com/player.js:1:2)","context":"{\"name\":\"other\"}"}""";
+    }
+
+    private static IEnumerable<string> UnmatchedAudioMessages()
+    {
+        yield return KnownAudioMessage.Replace("NotSupportedError", "NotAllowedError");
+        yield return KnownAudioMessage.Replace("persistent-audio-player", "poi-video");
+        yield return KnownAudioMessage.Replace("\"mediaErrorCode\":4", "\"mediaErrorCode\":3");
+        yield return KnownAudioMessage.Replace("\"mediaErrorCode\":4", "\"mediaErrorCode\":2");
+        yield return KnownAudioMessage.Replace("\"mediaErrorCode\":4", "\"mediaErrorCode\":40");
+        yield return KnownAudioMessage.Replace("\"mediaErrorCode\":4", "\"mediaErrorCode\":\"4\"");
+        yield return KnownAudioMessage.Replace("\"networkState\":3", "\"networkState\":2");
+        yield return KnownAudioMessage.Replace("\"readyState\":0", "\"readyState\":1");
+        yield return KnownAudioMessage.Replace("\"staleAttempt\":false", "\"staleAttempt\":true");
+        yield return "prefix " + KnownAudioMessage;
+        yield return KnownAudioMessage + " suffix";
+        yield return KnownAudioMessage + "\n";
+        yield return KnownAudioMessage[..^1];
+        yield return "JS error: {\"details\":" + KnownAudioMessage["JS error: ".Length..] + "}";
+        yield return "JS error: {\"value\":" + JsonSerializer.Serialize(KnownAudioMessage) + "}";
+        var reorderedPayload = JsonNode.Parse(KnownAudioMessage["JS error: ".Length..])!.AsObject();
+        var reordered = new JsonObject(reorderedPayload.Reverse().Select(pair => KeyValuePair.Create(pair.Key, pair.Value?.DeepClone())));
+        yield return "JS error: " + reordered.ToJsonString();
+        yield return "JS error: " + reordered.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        foreach (var field in new[] { "name", "component", "mediaErrorCode", "networkState", "readyState", "staleAttempt" })
+        {
+            var payload = JsonNode.Parse(KnownAudioMessage["JS error: ".Length..])!.AsObject();
+            payload.Remove(field);
+            yield return "JS error: " + payload.ToJsonString();
+        }
     }
 
     private static IEnumerable<string> UnmatchedMessages()
