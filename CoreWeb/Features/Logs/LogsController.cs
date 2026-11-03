@@ -50,7 +50,7 @@ public class LogsController(
                    [BrowserErrorAlertRules.SuppressionReasonPropertyName] = suppressionReason
                }))
         {
-            logger.LogError(ErrorReportingEventIds.BrowserError, safeMessage);
+            logger.LogError(ErrorReportingEventIds.BrowserError, "{BrowserErrorMessage:l}", safeMessage);
         }
 
         return Ok();
