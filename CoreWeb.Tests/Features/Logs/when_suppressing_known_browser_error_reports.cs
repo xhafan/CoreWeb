@@ -28,6 +28,7 @@ public class when_suppressing_known_browser_error_reports
     private const string BraveSource = "https://app.smartguide.app/en/destinations/02468eaf-0dd8-4a12-8a7a-3e616d0763c1/chongqing/places/0a161fac-a6a6-43d6-9b04-54193ead3d60/three-gorges-museum";
     private const string KnownBraveMessage = """JS error: {"message":"undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')","name":"TypeError","source":"https://app.smartguide.app/en/destinations/02468eaf-0dd8-4a12-8a7a-3e616d0763c1/chongqing/places/0a161fac-a6a6-43d6-9b04-54193ead3d60/three-gorges-museum","lineno":1,"colno":16,"stack":"global code (https://app.smartguide.app/en/destinations/02468eaf-0dd8-4a12-8a7a-3e616d0763c1/chongqing/places/0a161fac-a6a6-43d6-9b04-54193ead3d60/three-gorges-museum:1:16)"}""";
     private const string KnownAudioMessage = """JS error: {"message":"Failed to load because no supported source was found.","name":"NotSupportedError","component":"persistent-audio-player","playbackAction":"request","mediaId":"1374527","mediaUrl":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","currentSrc":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","mediaErrorCode":4,"mediaErrorMessage":"MEDIA_ELEMENT_ERROR: Format error","networkState":3,"readyState":0,"staleAttempt":false}""";
+    private const string KnownStaleAudioMessage = """JS error: {"message":"Failed to load because no supported source was found.","name":"NotSupportedError","component":"persistent-audio-player","playbackAction":"request","mediaId":"1599784","mediaUrl":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/df4bb62c-c683-4642-92ba-1c178108b9ea/resources/1599784.mp3","staleAttempt":true}""";
     private const string ReasonPropertyName = "BrowserErrorSuppressionReason";
 
     [TestCase(BraveSource)]
@@ -110,6 +111,27 @@ public class when_suppressing_known_browser_error_reports
         logEvent.Properties[ReasonPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe("PersistentAudioSourceFormatError");
     }
 
+    [TestCaseSource(nameof(MatchingStaleAudioMessages))]
+    public async Task it_keeps_raw_stale_audio_source_errors_without_delivering_alerts(string message)
+    {
+        await using var pipeline = new TestPipeline();
+
+        (await pipeline.LogBrowserAsync(message)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldBeEmpty();
+        var logEvent = pipeline.Events.ShouldHaveSingleItem();
+        logEvent.Level.ShouldBe(LogEventLevel.Error);
+        logEvent.RenderMessage().ShouldBe(message);
+        logEvent.Properties[LogConstants.RequestId].ShouldBeOfType<ScalarValue>().Value.ShouldBe("browser-request");
+        var eventId = logEvent.Properties["EventId"].ShouldBeOfType<StructureValue>();
+        eventId.Properties.Single(property => property.Name == nameof(EventId.Id)).Value
+            .ShouldBeOfType<ScalarValue>().Value.ShouldBe(ErrorReportingEventIds.BrowserError.Id);
+        logEvent.Properties[ErrorReportingLogPolicy.SuppressPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe(true);
+        logEvent.Properties[ReasonPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe("PersistentAudioStaleSourceNotSupported");
+    }
+
+    [TestCaseSource(nameof(UnmatchedStaleAudioMessages))]
     [TestCaseSource(nameof(UnmatchedAudioMessages))]
     public async Task it_reports_other_audio_failures_and_unexpected_envelopes(string message)
     {
@@ -198,6 +220,7 @@ public class when_suppressing_known_browser_error_reports
 
     [TestCase(KnownMessage)]
     [TestCase(KnownAudioMessage)]
+    [TestCase(KnownStaleAudioMessage)]
     [TestCase(KnownBraveMessage)]
     public async Task it_does_not_leak_suppression_to_other_errors(string suppressedMessage)
     {
@@ -251,6 +274,37 @@ public class when_suppressing_known_browser_error_reports
         yield return KnownAudioMessage.Replace("Failed to load because no supported source was found.", "The element has no supported sources.");
         yield return KnownAudioMessage.Replace("MEDIA_ELEMENT_ERROR: Format error", "PipelineStatus::DEMUXER_ERROR_COULD_NOT_OPEN: FFmpegDemuxer: open context failed");
         yield return KnownAudioMessage[..^1] + """, "stack":"Error: failed\n at play (https://example.com/player.js:1:2)","context":"{\"name\":\"other\"}"}""";
+    }
+
+    private static IEnumerable<string> MatchingStaleAudioMessages()
+    {
+        yield return KnownStaleAudioMessage;
+        yield return KnownStaleAudioMessage.Replace("1599784", "another-track").Replace(".mp3", ".wav?x=1&y=2");
+        yield return KnownStaleAudioMessage.Replace("\"request\"", "\"toggle\"");
+        yield return KnownStaleAudioMessage.Replace("Failed to load because no supported source was found.", "The element has no supported sources.");
+        yield return KnownStaleAudioMessage[..^1] + ""","stack":"Error: failed\n at play (https://example.com/player.js:1:2)"}""";
+    }
+
+    private static IEnumerable<string> UnmatchedStaleAudioMessages()
+    {
+        yield return KnownStaleAudioMessage.Replace("NotSupportedError", "NotAllowedError");
+        yield return KnownStaleAudioMessage.Replace("NotSupportedError", "TypeError");
+        yield return KnownStaleAudioMessage.Replace("persistent-audio-player", "poi-video");
+        yield return KnownStaleAudioMessage.Replace("\"request\"", "\"unexpected\"");
+        yield return KnownStaleAudioMessage.Replace("\"staleAttempt\":true", "\"staleAttempt\":false");
+        yield return KnownStaleAudioMessage.Replace("\"staleAttempt\":true", "\"staleAttempt\":\"true\"");
+        yield return "prefix " + KnownStaleAudioMessage;
+        yield return KnownStaleAudioMessage + " suffix";
+        yield return KnownStaleAudioMessage + "\n";
+        yield return KnownStaleAudioMessage[..^1];
+        yield return "JS error: {\"details\":" + KnownStaleAudioMessage["JS error: ".Length..] + "}";
+        yield return "JS error: {\"value\":" + JsonSerializer.Serialize(KnownStaleAudioMessage) + "}";
+        foreach (var field in new[] { "name", "component", "playbackAction", "mediaId", "mediaUrl", "staleAttempt" })
+        {
+            var payload = JsonNode.Parse(KnownStaleAudioMessage["JS error: ".Length..])!.AsObject();
+            payload.Remove(field);
+            yield return "JS error: " + payload.ToJsonString();
+        }
     }
 
     private static IEnumerable<string> UnmatchedAudioMessages()

@@ -7,6 +7,7 @@ internal static partial class BrowserErrorAlertRules
     internal const string SuppressionReasonPropertyName = "BrowserErrorSuppressionReason";
     private const string CefSharpMissingUpdateObject = nameof(CefSharpMissingUpdateObject);
     private const string PersistentAudioSourceFormatError = nameof(PersistentAudioSourceFormatError);
+    private const string PersistentAudioStaleSourceNotSupported = nameof(PersistentAudioStaleSourceNotSupported);
     private const string OpaqueScriptError = nameof(OpaqueScriptError);
     private const string BraveWalletMissingEthereumProvider = nameof(BraveWalletMissingEthereumProvider);
 
@@ -15,6 +16,7 @@ internal static partial class BrowserErrorAlertRules
         [
             new(CefSharpMissingUpdateObjectPattern(), CefSharpMissingUpdateObject),
             new(PersistentAudioSourceFormatErrorPattern(), PersistentAudioSourceFormatError),
+            new(PersistentAudioStaleSourceNotSupportedPattern(), PersistentAudioStaleSourceNotSupported),
             new(OpaqueScriptErrorPattern(), OpaqueScriptError),
             new(BraveWalletMissingEthereumProviderPattern(), BraveWalletMissingEthereumProvider)
         ]);
@@ -34,4 +36,8 @@ internal static partial class BrowserErrorAlertRules
     [GeneratedRegex("""\AJS error: \{"message":"[^"\r\n]*","name":"NotSupportedError","component":"persistent-audio-player",[^{}\r\n]*"mediaErrorCode":4,[^{}\r\n]*"networkState":3,"readyState":0,"staleAttempt":false(?:,.*)?\}\z""",
         RegexOptions.CultureInvariant, 100)]
     private static partial Regex PersistentAudioSourceFormatErrorPattern();
+
+    [GeneratedRegex("""\AJS error: \{"message":"(?:[^"\\\r\n]|\\(?:["\\/bfnrt]|u[0-9A-Fa-f]{4}))*","name":"NotSupportedError","component":"persistent-audio-player","playbackAction":"(?:request|toggle)","mediaId":"[^"\\\r\n]+","mediaUrl":"https?://[^"\\\r\n]+","staleAttempt":true(?:,"stack":"(?:[^"\\\r\n]|\\(?:["\\/bfnrt]|u[0-9A-Fa-f]{4}))*")?\}\z""",
+        RegexOptions.CultureInvariant, 100)]
+    private static partial Regex PersistentAudioStaleSourceNotSupportedPattern();
 }
