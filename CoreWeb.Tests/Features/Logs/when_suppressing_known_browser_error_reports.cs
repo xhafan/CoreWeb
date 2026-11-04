@@ -25,8 +25,41 @@ public class when_suppressing_known_browser_error_reports
 {
     private const string KnownMessage = """JS error: {"value":"Object Not Found Matching Id:1, MethodName:update, ParamCount:4"}""";
     private const string OpaqueScriptError = """JS error: {"value":"Script error.","source":"","lineno":0,"colno":0}""";
+    private const string BraveSource = "https://app.smartguide.app/en/destinations/02468eaf-0dd8-4a12-8a7a-3e616d0763c1/chongqing/places/0a161fac-a6a6-43d6-9b04-54193ead3d60/three-gorges-museum";
+    private const string KnownBraveMessage = """JS error: {"message":"undefined is not an object (evaluating 'window.ethereum.selectedAddress = undefined')","name":"TypeError","source":"https://app.smartguide.app/en/destinations/02468eaf-0dd8-4a12-8a7a-3e616d0763c1/chongqing/places/0a161fac-a6a6-43d6-9b04-54193ead3d60/three-gorges-museum","lineno":1,"colno":16,"stack":"global code (https://app.smartguide.app/en/destinations/02468eaf-0dd8-4a12-8a7a-3e616d0763c1/chongqing/places/0a161fac-a6a6-43d6-9b04-54193ead3d60/three-gorges-museum:1:16)"}""";
     private const string KnownAudioMessage = """JS error: {"message":"Failed to load because no supported source was found.","name":"NotSupportedError","component":"persistent-audio-player","playbackAction":"request","mediaId":"1374527","mediaUrl":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","currentSrc":"https://d3f6ixrx8a9kmw.cloudfront.net/data/v4/pois/554e48f9-d47e-4cf8-b58c-b65d1c7cafe9/resources/1374527.mp3","mediaErrorCode":4,"mediaErrorMessage":"MEDIA_ELEMENT_ERROR: Format error","networkState":3,"readyState":0,"staleAttempt":false}""";
     private const string ReasonPropertyName = "BrowserErrorSuppressionReason";
+
+    [TestCase(BraveSource)]
+    [TestCase("https://staging.smartguide.app/en/other-page?language=en&view=detail")]
+    public async Task it_keeps_the_raw_brave_wallet_error_without_delivering_an_alert(string source)
+    {
+        await using var pipeline = new TestPipeline();
+        var message = KnownBraveMessage.Replace(BraveSource, source);
+
+        (await pipeline.LogBrowserAsync(message)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldBeEmpty();
+        var logEvent = pipeline.Events.ShouldHaveSingleItem();
+        logEvent.Level.ShouldBe(LogEventLevel.Error);
+        logEvent.RenderMessage().ShouldBe(message);
+        logEvent.Properties[LogConstants.RequestId].ShouldBeOfType<ScalarValue>().Value.ShouldBe("browser-request");
+        logEvent.Properties[ErrorReportingLogPolicy.SuppressPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe(true);
+        logEvent.Properties[ReasonPropertyName].ShouldBeOfType<ScalarValue>().Value.ShouldBe("BraveWalletMissingEthereumProvider");
+    }
+
+    [TestCaseSource(nameof(UnmatchedBraveMessages))]
+    public async Task it_reports_other_wallet_errors_and_unexpected_brave_envelopes(string message)
+    {
+        await using var pipeline = new TestPipeline();
+
+        (await pipeline.LogBrowserAsync(message)).ShouldBeOfType<OkResult>();
+        await pipeline.DrainAsync();
+
+        pipeline.Reports.ShouldHaveSingleItem().Message.ShouldStartWith(message);
+        AssertUnsuppressed(pipeline.Events.ShouldHaveSingleItem());
+    }
 
     [Test]
     public async Task it_keeps_the_raw_opaque_script_error_without_delivering_an_alert()
@@ -165,6 +198,7 @@ public class when_suppressing_known_browser_error_reports
 
     [TestCase(KnownMessage)]
     [TestCase(KnownAudioMessage)]
+    [TestCase(KnownBraveMessage)]
     public async Task it_does_not_leak_suppression_to_other_errors(string suppressedMessage)
     {
         await using var pipeline = new TestPipeline();
@@ -187,6 +221,26 @@ public class when_suppressing_known_browser_error_reports
         logEvent.Level.ShouldBe(LogEventLevel.Error);
         logEvent.Properties.ShouldNotContainKey(ErrorReportingLogPolicy.SuppressPropertyName);
         logEvent.Properties.ShouldNotContainKey(ReasonPropertyName);
+    }
+
+    private static IEnumerable<string> UnmatchedBraveMessages()
+    {
+        yield return KnownBraveMessage.Replace("selectedAddress = undefined", "selectedAddress = null");
+        yield return KnownBraveMessage.Replace("window.ethereum", "window.otherProvider");
+        yield return KnownBraveMessage.Replace("TypeError", "ReferenceError");
+        yield return KnownBraveMessage.Replace("\"lineno\":1", "\"lineno\":2");
+        yield return KnownBraveMessage.Replace("\"colno\":16", "\"colno\":17");
+        yield return KnownBraveMessage.Replace("global code (", "appFunction (");
+        yield return KnownBraveMessage.Replace(":1:16)", ":2:16)");
+        yield return KnownBraveMessage.Replace("\"source\":\"" + BraveSource, "\"source\":\"https://app.smartguide.app/assets/bundle.js");
+        yield return KnownBraveMessage.Replace("\"stack\":\"global code (", "\"stack\":\"global code (https://unrelated.example/");
+        yield return "prefix " + KnownBraveMessage;
+        yield return KnownBraveMessage + " suffix";
+        yield return KnownBraveMessage + "\n";
+        yield return KnownBraveMessage[..^1];
+        yield return KnownBraveMessage[..^1] + ",\"component\":\"application\"}";
+        yield return "JS error: {\"details\":" + KnownBraveMessage["JS error: ".Length..] + "}";
+        yield return "JS error: {\"value\":" + JsonSerializer.Serialize(KnownBraveMessage) + "}";
     }
 
     private static IEnumerable<string> MatchingAudioMessages()
