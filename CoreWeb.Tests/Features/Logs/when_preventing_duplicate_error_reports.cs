@@ -16,9 +16,11 @@ namespace CoreWeb.Tests.Features.Logs;
 [TestFixture]
 public class when_preventing_duplicate_error_reports
 {
-    [TestCase(false)]
-    [TestCase(true)]
-    public async Task it_reports_the_browser_error_once_even_when_delivery_fails(bool deliveryFails)
+    [TestCase(false, "Browser interaction failed")]
+    [TestCase(true, "Browser interaction failed")]
+    [TestCase(false, """JS error: {"value":"Object Not Found Matching Id:1, MethodName:update, ParamCount:4"}""")]
+    [TestCase(true, """JS error: {"value":"Object Not Found Matching Id:1, MethodName:update, ParamCount:4"}""")]
+    public async Task it_reports_the_browser_error_once_even_when_delivery_fails(bool deliveryFails, string message)
     {
         var queue = new ErrorReportQueue(Options.Create(new ErrorReportingOptions()));
         using var logger = new LoggerConfiguration().Enrich.FromLogContext()
@@ -35,7 +37,7 @@ public class when_preventing_duplicate_error_reports
         IActionResult? result = null;
         var requestIdEnricher = new SerilogRequestIdEnricherMiddleware(_ =>
         {
-            result = controller.LogError("Browser interaction failed");
+            result = controller.LogError(message);
             return Task.CompletedTask;
         });
         var beforeCallUtc = DateTime.UtcNow;
@@ -49,7 +51,7 @@ public class when_preventing_duplicate_error_reports
         await delivery.StopAsync(CancellationToken.None);
 
         var report = reporter.Reports.ShouldHaveSingleItem();
-        report.Message.ShouldBe("Browser interaction failed");
+        report.Message.ShouldBe(message);
         report.Origin.ShouldBe(ErrorReportOrigin.Browser);
         report.RequestId.ShouldBe(context.TraceIdentifier);
         report.OccurredAtUtc.ShouldBeGreaterThanOrEqualTo(beforeCallUtc);

@@ -6,6 +6,8 @@ public sealed record ErrorReportMessageFilterRule(Regex Pattern, string Reason);
 
 public static class ErrorReportMessageFilter
 {
+    public const string SuppressionReasonPropertyName = "BrowserErrorSuppressionReason";
+
     public static string? GetSuppressionReason(string message, IReadOnlyList<ErrorReportMessageFilterRule> rules)
     {
         foreach (var rule in rules)
